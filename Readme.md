@@ -9,6 +9,9 @@ Cocroach - sestavit v docker file - kontejner
 Yugabyte - sestavit v docker file - kontejner
 do denicku jak vse instaluju
 
+clusterova databaze - ???
+multiple docker compose files
+
 na githubu denicek a docker compose pro vsechny
 
 
