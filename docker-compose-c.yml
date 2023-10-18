@@ -1,0 +1,51 @@
+# version: '3.8'
+
+# services:
+#   cockroach:
+#     container_name: cockroachdb
+#     image: cockroachdb/cockroach:v23.1.11
+#     command: start --insecure
+#     ports:
+#       - "26257:26257"
+#       - "8080:8080"
+
+version: '3.8'
+services:
+  roach1:
+    container_name: roach1
+    image: cockroachdb/cockroach:v23.1.11
+    command: start --insecure --join=roach1,roach2,roach3
+    networks:
+      - roachnet
+    ports:
+      - "26257:26257"
+      - "8080:8080"
+    volumes:
+      - roach1:/mnt/cockroach/cockroach-data
+
+  roach2:
+    container_name: roach2
+    image: cockroachdb/cockroach:v23.1.11
+    command: start --insecure --join=roach1,roach2,roach3
+    networks:
+      - roachnet
+    volumes:
+      - roach2:/mnt/cockroach/cockroach-data
+
+  roach3:
+    container_name: roach3
+    image: cockroachdb/cockroach:v23.1.11
+    command: start --insecure --join=roach1,roach2,roach3
+    networks:
+      - roachnet
+    volumes:
+      - roach3:/mnt/cockroach/cockroach-data
+
+volumes:
+  roach1:
+  roach2:
+  roach3:
+
+networks:
+  roachnet:
+    driver: bridge

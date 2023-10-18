@@ -25,3 +25,16 @@ na githubu denicek a docker compose pro vsechny
 21. 1. 2024 uzavření projektu
 22. 1. 2024 počátek zkouškového období,
 ?. 3. 2024 konec zkouškového období.
+
+# Notes
+
+## Cockroachdb
+
+
+After running dokcer compose, run
+    docker exec -it roach1 ./cockroach init --insecure
+for one-time initialization. Even if you add or remove a node you don't have to run this again as long as the database is running.
+
+Use
+    docker exec -it roach1 grep 'node starting' cockroach-data/logs/cockroach.log -A 11
+to check the startup parameters of the cluster.
