@@ -1,10 +1,21 @@
 version: "3.8"
 
 
-############### yugabyte volumes ###############
+
 volumes:
+  # yugabyte volumes
   yb-master-data-1:
   yb-tserver-data-1:
+
+  # cockroach volumes
+  roach1:
+  roach2:
+  roach3:
+
+# cockroach network
+networks:
+  roachnet:
+    driver: bridge
 
 
 services:
@@ -12,8 +23,8 @@ services:
   ########### pgadmin ################
   pgadmin:
     container_name: pgadmin4
-    image: "dpage/pgadmin4:7.7"
-    restart: always
+    image: "dpage/pgadmin4:7.8"
+    restart: unless-stopped
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@admin.com
       PGADMIN_DEFAULT_PASSWORD: root
@@ -25,7 +36,7 @@ services:
   postgres:
     container_name: postgres_single
     image: "postgres:16.0"
-    restart: always
+    restart: unless-stopped
     environment:
       POSTGRES_USER: root
       POSTGRES_PASSWORD: root
@@ -36,49 +47,108 @@ services:
 
   ############## yugabyte ######################
   yb-master:
-      image: yugabytedb/yugabyte:2.19.2.0-b121
-      container_name: yb-master-n1
-      volumes:
-      - yb-master-data-1:/mnt/master
-      command: [ "/home/yugabyte/bin/yb-master",
-                "--fs_data_dirs=/mnt/master",
-                "--master_addresses=yb-master-n1:7100",
-                "--rpc_bind_addresses=yb-master-n1:7100",
-                "--replication_factor=1"]
-      ports:
-      - "7000:7000"
-      environment:
-        SERVICE_7000_NAME: yb-master
+    image: yugabytedb/yugabyte:2.19.2.0-b121
+    restart: unless-stopped
+    container_name: yb-master-n1
+    volumes:
+    - yb-master-data-1:/mnt/master
+    command: [ "/home/yugabyte/bin/yb-master",
+              "--fs_data_dirs=/mnt/master",
+              "--master_addresses=yb-master-n1:7100",
+              "--rpc_bind_addresses=yb-master-n1:7100",
+              "--replication_factor=1"]
+    ports:
+    - "7000:7000"
+    environment:
+      SERVICE_7000_NAME: yb-master
 
   yb-tserver:
-      image: yugabytedb/yugabyte:2.19.2.0-b121
-      container_name: yb-tserver-n1
-      volumes:
-      - yb-tserver-data-1:/mnt/tserver
-      command: [ "/home/yugabyte/bin/yb-tserver",
-                "--fs_data_dirs=/mnt/tserver",
-                "--start_pgsql_proxy",
-                "--rpc_bind_addresses=yb-tserver-n1:9100",
-                "--tserver_master_addrs=yb-master-n1:7100"
-                ]
-      ports:
-      - "9042:9042"
-      - "5433:5433"
-      - "9001:9000"
-      environment:
-        SERVICE_5433_NAME: ysql
-        SERVICE_9042_NAME: ycql
-        SERVICE_6379_NAME: yedis
-        SERVICE_9000_NAME: yb-tserver
-        POSTGRES_USER: root
-      depends_on:
-      - yb-master
+    image: yugabytedb/yugabyte:2.19.2.0-b121
+    restart: unless-stopped
+    container_name: yb-tserver-n1
+    volumes:
+    - yb-tserver-data-1:/mnt/tserver
+    command: [ "/home/yugabyte/bin/yb-tserver",
+              "--fs_data_dirs=/mnt/tserver",
+              "--start_pgsql_proxy",
+              "--rpc_bind_addresses=yb-tserver-n1:9100",
+              "--tserver_master_addrs=yb-master-n1:7100"
+              ]
+    ports:
+    - "9042:9042"
+    - "5433:5433"
+    - "9001:9000"
+    environment:
+      SERVICE_5433_NAME: ysql
+      SERVICE_9042_NAME: ycql
+      SERVICE_6379_NAME: yedis
+      SERVICE_9000_NAME: yb-tserver
+      POSTGRES_USER: root
+    depends_on:
+    - yb-master
 
   yb-client:
-      image: yugabytedb/yb-sample-apps:1.3.9
-      container_name: yb-client-n1
-      command: [ "--workload", "SqlInserts", "--nodes", "yb-tserver-n1:5433" ]
-      depends_on:
-      - yb-tserver
+    image: yugabytedb/yb-sample-apps:1.3.9
+    restart: unless-stopped
+    container_name: yb-client-n1
+    command: [ "--workload", "SqlInserts", "--nodes", "yb-tserver-n1:5433" ]
+    depends_on:
+    - yb-tserver
 
 
+
+  ###################### cockroach ######################3
+  roach1:
+    container_name: roach1
+    image: cockroachdb/cockroach:v23.1.11
+    restart: unless-stopped
+    command: start --insecure --join=roach1,roach2,roach3
+    networks:
+      - roachnet
+    ports:
+      - "26257:26257"
+      - "8080:8080"
+    volumes:
+      - roach1:/mnt/cockroach/cockroach-data
+
+  roach2:
+    container_name: roach2
+    image: cockroachdb/cockroach:v23.1.11
+    restart: unless-stopped
+    command: start --insecure --join=roach1,roach2,roach3
+    networks:
+      - roachnet
+    volumes:
+      - roach2:/mnt/cockroach/cockroach-data
+
+  roach3:
+    container_name: roach3
+    image: cockroachdb/cockroach:v23.1.11
+    restart: unless-stopped
+    command: start --insecure --join=roach1,roach2,roach3
+    networks:
+      - roachnet
+    volumes:
+      - roach3:/mnt/cockroach/cockroach-data
+
+  
+  # #################### gql_workflow #####################
+  # gql_workflow:
+  #   container_name: gql_workflow
+  #   image: gql_workflow
+  #   build:
+  #     # context definuje cestu k popisu
+  #     context: ./gql_workflows
+  #   environment:
+  #     # promenne, ktere lze cist v kontejneru
+  #     - POSTGRES_USER=postgres
+  #     - POSTGRES_PASSWORD=example
+  #     - POSTGRES_HOST=172.25.0.2:5432
+  #     - POSTGRES_DB=data
+  #     - DEMO=true
+  #   depends_on:
+  #     - postgres
+  #   restart: unless-stopped # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+  #   ports: #v deploymentu by nebylo zadne mapovani portu
+  #   #   # vnejsi port : port, kde sluzbu poskytuje kontejner
+  #     - 31123:8000

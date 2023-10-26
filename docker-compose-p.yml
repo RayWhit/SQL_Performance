@@ -4,7 +4,7 @@ services:
   postgres:
     container_name: postgres_single
     image: "postgres:16.0"
-    restart: always
+    restart: unless-stopped
     environment:
       POSTGRES_USER: root
       POSTGRES_PASSWORD: root

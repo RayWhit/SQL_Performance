@@ -35,4 +35,68 @@ After running dokcer compose, run: "docker exec -it roach1 ./cockroach init --in
 
 Use "docker exec -it roach1 grep 'node starting' cockroach-data/logs/cockroach.log -A 11" to check the startup parameters of the cluster.
 
-Use "cockroach workload run movr --duration=5m" in node1 container for a test of cluster.
+Use "cockroach workload run movr --duration=5m" in node1 container for a test of the cluster.
+
+Run: "cockroach sql --insecure --host=localhost:26257" in roach1 container for sql queries
+
+To add a node, run: 
+    docker run -d \
+    --name roach4 \
+    --network sql_performance_roachnet \
+    -v roach4:/mnt/cockroach/cockroach-data \
+    --label com.stack=sql_performance \
+    cockroachdb/cockroach:v23.1.11 start --insecure --join=roach1,roach2,roach3
+
+Make sure to change --name, --network, --label specifies the docker stack --label com.stack={stack}, --join correct nodes (containers) in network
+
+
+# test SQL
+## create table
+CREATE TABLE Employees (
+    EmployeeID INT PRIMARY KEY,
+    FirstName VARCHAR(50),
+    LastName VARCHAR(50),
+    Department VARCHAR(50),
+    Salary DECIMAL(10, 2)
+);
+
+## insert data
+INSERT INTO Employees (EmployeeID, FirstName, LastName, Department, Salary) 
+VALUES (1, 'John', 'Doe', 'Sales', 50000.00);
+
+INSERT INTO Employees (EmployeeID, FirstName, LastName, Department, Salary) 
+VALUES (2, 'Jane', 'Smith', 'HR', 60000.00);
+
+## selecting data
+SELECT * FROM Employees;
+
+## updating data
+UPDATE Employees
+SET Salary = 55000.00
+WHERE EmployeeID = 1;
+
+## deleting data
+DELETE FROM Employees
+WHERE EmployeeID = 2;
+
+## filtering data
+SELECT * FROM Employees
+WHERE Department = 'Sales';
+
+## aggregating data
+SELECT Department, AVG(Salary) as AverageSalary
+FROM Employees
+GROUP BY Department;
+
+## joining tables
+CREATE TABLE Projects (
+    ProjectID INT PRIMARY KEY,
+    ProjectName VARCHAR(50),
+    EmployeeID INT,
+    FOREIGN KEY (EmployeeID) REFERENCES Employees(EmployeeID)
+);
+
+SELECT Employees.FirstName, Employees.LastName, Projects.ProjectName
+FROM Employees
+INNER JOIN Projects
+ON Employees.EmployeeID = Projects.EmployeeID;
