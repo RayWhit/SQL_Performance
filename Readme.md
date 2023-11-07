@@ -15,6 +15,12 @@ multiple docker compose files
 na githubu denicek a docker compose pro vsechny
 
 
+dokumentace yugabyte, cockroach - 5433 implicitni heslo
+
+connect cockroach to pgadmin
+
+
+
 
 
 # Casovy harmonogram
@@ -29,9 +35,24 @@ na githubu denicek a docker compose pro vsechny
 # Notes
 Notes for getting all containers set up correctly.
 
+## Postgres
+Use container ip address as host.
+
+### Done
+Runs
+can connect to pgadmin
+created database "data"
+
+
+
+
 ## Cockroachdb
 
-After running dokcer compose, run: "docker exec -it roach1 ./cockroach init --insecure" for one-time initialization. Even if you add or remove a node you don't have to run this again as long as the database is running.
+After running dokcer compose, run: 
+
+"docker exec -it roach1 ./cockroach --host=roach1:26357 init --insecure" 
+
+for one-time initialization. Even if you add or remove a node you don't have to run this again as long as the database is running.
 
 Use "docker exec -it roach1 grep 'node starting' cockroach-data/logs/cockroach.log -A 11" to check the startup parameters of the cluster.
 
@@ -45,9 +66,28 @@ To add a node, run:
     --network sql_performance_roachnet \
     -v roach4:/mnt/cockroach/cockroach-data \
     --label com.stack=sql_performance \
-    cockroachdb/cockroach:v23.1.11 start --insecure --join=roach1,roach2,roach3
+    cockroachdb/cockroach:v23.1.11 start --insecure --join=roach1,roach2,roach3,roach4
 
 Make sure to change --name, --network, --label specifies the docker stack --label com.stack={stack}, --join correct nodes (containers) in network
+
+### Done
+Runs
+
+
+
+
+## yugabyte
+Connect to yb-tserver-n1
+Use container ip address as host.
+default name: yugabyte
+default password: yugabyte
+port: 5433:5433
+
+### Done
+Runs
+can connect to pgadmin
+
+
 
 
 # test SQL
