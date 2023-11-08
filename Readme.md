@@ -19,6 +19,10 @@ dokumentace yugabyte, cockroach - 5433 implicitni heslo
 
 connect cockroach to pgadmin
 
+find out how to connect cockroachdb database with pgadmin (pgadmin sees the server at this point)
+
+make sql evolution communicate with cockroach and yugabyte
+
 
 
 
@@ -70,9 +74,18 @@ To add a node, run:
 
 Make sure to change --name, --network, --label specifies the docker stack --label com.stack={stack}, --join correct nodes (containers) in network
 
+
+use container ip or container name as host
+host roach1
+port 26257
+username root
+in parameters disable ssl mode
+
+
+
 ### Done
 Runs
-
+Connects to pgadmin
 
 
 
