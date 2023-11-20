@@ -1,0 +1,51 @@
+version: '3.8'
+
+volumes:
+  roach-single:
+
+networks:
+  roachnet:
+    driver: bridge
+
+
+services:
+
+  ########### pgadmin ################
+  pgadmin:
+    container_name: pgadmin4
+    image: "dpage/pgadmin4:7.8"
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: root
+    ports:
+      - "5050:80"
+    networks:
+      - roachnet
+
+
+  ###################### cockroach ######################
+  roach:
+    image: cockroachdb/cockroach:v23.1.11
+    container_name: roach-single
+    hostname: roach-single
+    restart: unless-stopped
+
+    # joins node with the others creating a cluster
+    command: start-single-node --http-addr=localhost:8080
+
+    # these variables only available in start-single-node mode
+    environment:
+      COCKROACH_USER: root
+      COCKROACH_PASSWORD: root
+      COCKROACH_DATABASE: data
+
+    networks:
+      - roachnet
+
+    ports:
+      - "26257:26257"
+      - "8080:8080"
+
+    volumes:
+      - roach-single:/cockroach/cockroach-data

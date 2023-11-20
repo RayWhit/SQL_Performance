@@ -18,7 +18,22 @@ services:
       - "5050:80"
 
 
-  ############## yugabyte ######################
+  # ############## yugabyte ######################
+  # yugabyte:
+  #   image: yugabytedb/yugabyte:2.19.3.0-b140
+  #   container_name: yugabyte
+  #   ports:
+  #     - "7000:7000"
+  #     - "9000:9000"
+  #     - "15433:15433"
+  #     - "5433:5433"
+  #     - "9042:9042"
+    
+  #   command: bin/yugabyted start --base_dir=/home/yugabyte/yb_data --daemon=false
+  
+  
+  
+  
   yb-master:
     image: yugabytedb/yugabyte:2.19.2.0-b121
     restart: unless-stopped
@@ -50,12 +65,14 @@ services:
     ports:
     - "9042:9042"
     - "5433:5433"
-    - "9001:9000"
+    - "9001:9000" # rebind because of portainer
+    - "15433:15433"
     environment:
       SERVICE_5433_NAME: ysql
       SERVICE_9042_NAME: ycql
       SERVICE_6379_NAME: yedis
       SERVICE_9000_NAME: yb-tserver
+      POSTGRES_DB: data
     depends_on:
     - yb-master
 

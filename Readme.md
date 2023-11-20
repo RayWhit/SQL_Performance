@@ -54,17 +54,37 @@ created database "data"
 
 After running dokcer compose, run: 
 
-"docker exec -it roach1 ./cockroach --host=roach1:26357 init --insecure" 
+    docker exec -it roach1 ./cockroach --host=roach1:26357 init --insecure
 
 for one-time initialization. Even if you add or remove a node you don't have to run this again as long as the database is running.
 
-Use "docker exec -it roach1 grep 'node starting' cockroach-data/logs/cockroach.log -A 11" to check the startup parameters of the cluster.
 
-Use "cockroach workload run movr --duration=5m" in node1 container for a test of the cluster.
+Use 
 
-Run: "cockroach sql --insecure --host=localhost:26257" in roach1 container for sql queries
+    docker exec -it roach1 grep 'node starting' cockroach-data/logs/cockroach.log -A 11 
+
+to check the startup parameters of the cluster.
+
+
+
+Use 
+
+    cockroach workload run movr --duration=5m 
+
+in node1 container for a test of the cluster.
+
+
+
+Run: 
+
+    cockroach sql --insecure --host=localhost:26257 
+
+in roach1 container for sql queries
+
+
 
 To add a node, run: 
+
     docker run -d \
     --name roach4 \
     --network sql_performance_roachnet \
@@ -72,12 +92,13 @@ To add a node, run:
     --label com.stack=sql_performance \
     cockroachdb/cockroach:v23.1.11 start --insecure --join=roach1,roach2,roach3,roach4
 
-Make sure to change --name, --network, --label specifies the docker stack --label com.stack={stack}, --join correct nodes (containers) in network
+Make sure to change --name, --network, --label specifies the docker stack "--label com.stack={stack}", --join correct nodes (containers) in network
 
 
 use container ip or container name as host
 host roach1
 port 26257
+maintenance database system
 username root
 in parameters disable ssl mode
 
@@ -90,22 +111,38 @@ Connects to pgadmin
 
 
 ## yugabyte
+
+Use: docker-compose-y2.yml
+
 Connect to yb-tserver-n1
 Use container ip address as host.
 default name: yugabyte
 default password: yugabyte
 port: 5433:5433
 
+Check the cluster status:
+    
+    docker exec -it yugabyte yugabyted status
+
+To open YSQL shell:
+
+    docker exec -it yugabyte bash -c '/home/yugabyte/bin/ysqlsh --echo-queries --host yugabyte'
+
+
 ### Done
 Runs
 can connect to pgadmin
-
+communicates with gql evolution
 
 
 
 # test SQL
+## create database
+
+CREATE DATABASE data; 
+
 ## create table
-CREATE TABLE Employees (
+CREATE TABLE data.Employees (
     EmployeeID INT PRIMARY KEY,
     FirstName VARCHAR(50),
     LastName VARCHAR(50),
