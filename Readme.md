@@ -26,6 +26,22 @@ make sql evolution communicate with cockroach and yugabyte
 
 
 
+pridat Apollo do kontejneru, dopsat do pole vsechny kontejnery (services), pak davam pozadavek na apollo
+
+3 nodova databaze
+
+
+
+
+questions
+
+cannot connect apollo to containers (errors like: Type "RBACObjectGQLModel" is an extension type, but there is no type definition for "RBACObjectGQLModel" in any subgraph.)
+
+cannot curl to other containers besides forms and events
+
+
+
+
 
 # Casovy harmonogram
 9. 10. 2023 zveřejnění harmonogramu prací na projektu (z pohledu programátora), určení repository url (nebo alespoň root např. https://github.com/hrbolek)
@@ -98,15 +114,20 @@ Make sure to change --name, --network, --label specifies the docker stack "--lab
 use container ip or container name as host
 host roach1
 port 26257
-maintenance database system
+maintenance database defaultdb
 username root
 in parameters disable ssl mode
 
 
 
+Start SQL shell (roach1):
+    
+    docker exec -it roach1 ./cockroach sql --host=roach2:26258 --insecure
+
+
 ### Done
 Runs
-Connects to pgadmin
+Connects to pgadmin (sort of)
 
 
 
