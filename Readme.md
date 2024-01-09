@@ -148,6 +148,11 @@ Check the cluster status:
 To open YSQL shell:
 
     docker exec -it yugabyte bash -c '/home/yugabyte/bin/ysqlsh --echo-queries --host yugabyte'
+    docker exec -it yugabyte1 bash -c '/home/yugabyte/bin/ysqlsh --echo-queries --host yugabyte1'
+
+
+Set replication factor:
+    docker exec -it yugabyte1 /bin/bash -c './bin/yugabyted configure data_placement --rf=3'
 
 
 ### Done

@@ -28,9 +28,9 @@ services:
 
 
   ############## yugabyte ######################
-  yugabyte:
+  yugabyte1:
     image: yugabytedb/yugabyte:2.19.3.0-b140
-    container_name: yugabyte
+    container_name: yugabyte1
     ports:
       - "7000:7000"
       - "9001:9000"   # rebind because of portainer
@@ -44,10 +44,48 @@ services:
     command: ["bin/yugabyted", "start", "--daemon=false"]
 
 
+  yugabyte2:
+    image: yugabytedb/yugabyte:2.19.3.0-b140
+    container_name: yugabyte2
+    # ports:
+    #   - "7000:7000"
+    #   - "9001:9000"   # rebind because of portainer
+    #   - "15433:15433" # cluster GUI
+    #   - "5433:5433"
+    #   - "9042:9042"
+
+    # networks:
+    #   - yb_network
+    
+    command: ["bin/yugabyted", "start", "--daemon=false", "--join=yugabyte1"]
+    depends_on:
+      - yugabyte1
+    restart: on-failure:10
+
+
+  yugabyte3:
+    image: yugabytedb/yugabyte:2.19.3.0-b140
+    container_name: yugabyte3
+    # ports:
+    #   - "7000:7000"
+    #   - "9001:9000"   # rebind because of portainer
+    #   - "15433:15433" # cluster GUI
+    #   - "5433:5433"
+    #   - "9042:9042"
+
+    # networks:
+    #   - yb_network
+    
+    command: ["bin/yugabyted", "start", "--daemon=false", "--join=yugabyte1"]
+    depends_on:
+      - yugabyte1
+    restart: on-failure:10
 
 
 
 
+
+############# apollo #######################
   apollo:
     image: hrbolek/apollo_federation
     environment:
@@ -56,8 +94,10 @@ services:
       - |
         SERVICES=
         [
-          {"name": "externalids", "url": "http://gql_externalids:8000/gql"}
+          {"name": "granting", "url": "http://gql_granting:8000/gql"},
+          {"name": "ug", "url": "http://gql_ug:8000/gql"}
         ]
+      # ug has to be part of services
     healthcheck:
       # definice, umoznujici provest test, zda je kontejner v poradku (vsimnete si portu a srovnejte s portem v environment)
       interval: 60s
@@ -69,12 +109,19 @@ services:
     #   # vnejsi port : port, kde sluzbu poskytuje kontejner
       - 33000:3000
     depends_on:
+      - postgres
+      - yugabyte1
+      - yugabyte2
+      - yugabyte3
       - gql_externalids
+      - gql_forms
+      - gql_events
+      - gql_granting
     
 
 
 
-
+######################## students containers ##############################
   gql_forms:
     image: hrbolek/gql_forms
     #container_name: z-gql_forms_Hrbolek
@@ -98,6 +145,9 @@ services:
     restart: on-failure:3 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
     depends_on:
       - postgres
+      - yugabyte1
+      - yugabyte2
+      - yugabyte3
     ports:
       - 31127:8000  # ray made this port number up
 
@@ -105,7 +155,7 @@ services:
 
 
   gql_facilities:
-    image: vitekr/gql_facilities
+    image: vitekr/gql_facilities:latest
     container_name: z-gql_facilities_Rout-Stacha
     # build:
     #   # context definuje cestu k popisu
@@ -120,6 +170,9 @@ services:
       # kontejnery, ktere musi byt spusteny drive
     depends_on:
       - postgres
+      - yugabyte1
+      - yugabyte2
+      - yugabyte3
     # healthcheck:
     #   # definice, umoznujici provest test, zda je kontejner v poradku
     #   test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
@@ -157,6 +210,9 @@ services:
     restart: on-failure:3 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
     depends_on:
       - postgres
+      - yugabyte1
+      - yugabyte2
+      - yugabyte3
     ports:
       - 31126:8000  # ray made up this port number
 
@@ -185,13 +241,16 @@ services:
     restart: on-failure:3 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
     depends_on:
       - postgres
+      - yugabyte1
+      - yugabyte2
+      - yugabyte3
     ports:
       - 32801:8000 # ray made up this port number
   
 
 
   gql_granting:
-    image: oklement/gql_granting
+    image: oklement/gql_granting:latest
     # container_name: z-gql_granting_Klement-Novotny-Wala
     # build:
     #   # context definuje cestu k popisu
@@ -213,6 +272,9 @@ services:
     restart: on-failure:3 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
     depends_on:
       - postgres
+      - yugabyte1
+      - yugabyte2
+      - yugabyte3
     ports:
       - 8000:8000
 
