@@ -82,6 +82,16 @@ services:
     restart: on-failure:10
 
 
+  # creates database data after yugabyte starts
+  yugabyte-init:
+    image: yugabytedb/yugabyte:2.19.3.0-b140
+    container_name: yugabyte-init
+    depends_on:
+      - yugabyte1
+      - yugabyte2
+      - yugabyte3
+    entrypoint: /bin/sh
+    command: -c "sleep 20 && /home/yugabyte/bin/ysqlsh --echo-queries --host yugabyte1 -U postgres -d postgres -c 'CREATE DATABASE data;'"
 
 
 
@@ -94,8 +104,9 @@ services:
       - |
         SERVICES=
         [
-          {"name": "granting", "url": "http://gql_granting:8000/gql"},
           {"name": "ug", "url": "http://gql_ug:8000/gql"}
+          
+          
         ]
       # ug has to be part of services
     healthcheck:
@@ -104,6 +115,7 @@ services:
       retries: 3
       start_period: 60s
       timeout: 10s
+    
     restart: on-failure:3 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
     ports: #v deploymentu by nebylo zadne mapovani portu
     #   # vnejsi port : port, kde sluzbu poskytuje kontejner
@@ -113,6 +125,7 @@ services:
       - yugabyte1
       - yugabyte2
       - yugabyte3
+      #- yugabyte-init
       - gql_externalids
       - gql_forms
       - gql_events
@@ -121,9 +134,9 @@ services:
 
 
 
-######################## students containers ##############################
+######################## student containers ##############################
   gql_forms:
-    image: hrbolek/gql_forms
+    image: hrbolek/gql_forms:latest
     #container_name: z-gql_forms_Hrbolek
     # build:
     #   # context definuje cestu k popisu
@@ -138,16 +151,22 @@ services:
     healthcheck:
       # definice, umoznujici provest test, zda je kontejner v poradku
       test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
-      interval: 60s
-      retries: 3
-      start_period: 60s
+      interval: 30s
+      retries: 10
+      start_period: 30s
       timeout: 10s
-    restart: on-failure:3 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+    restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
     depends_on:
-      - postgres
-      - yugabyte1
-      - yugabyte2
-      - yugabyte3
+      postgres:
+        condition: service_started
+      yugabyte1:
+        condition: service_started
+      yugabyte2:
+        condition: service_started
+      yugabyte3:
+        condition: service_started
+      yugabyte-init:
+        condition: service_completed_successfully
     ports:
       - 31127:8000  # ray made this port number up
 
@@ -168,19 +187,27 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
       - DEMO=true
       # kontejnery, ktere musi byt spusteny drive
+    
     depends_on:
-      - postgres
-      - yugabyte1
-      - yugabyte2
-      - yugabyte3
-    # healthcheck:
-    #   # definice, umoznujici provest test, zda je kontejner v poradku
-    #   test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
-    #   interval: 60s
-    #   retries: 3
-    #   start_period: 60s
-    #   timeout: 10s
-    restart: on-failure:3 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+      postgres:
+        condition: service_started
+      yugabyte1:
+        condition: service_started
+      yugabyte2:
+        condition: service_started
+      yugabyte3:
+        condition: service_started
+      yugabyte-init:
+        condition: service_completed_successfully
+    
+    healthcheck:
+      # definice, umoznujici provest test, zda je kontejner v poradku
+      test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
+      interval: 30s
+      retries: 10
+      start_period: 30s
+      timeout: 10s
+    restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
     ports: #v deploymentu by nebylo zadne mapovani portu
     #   # vnejsi port : port, kde sluzbu poskytuje kontejner
        - 31125:8000
@@ -200,19 +227,31 @@ services:
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_DB=${POSTGRES_DB}
       - DEMO=true
+    
     healthcheck:
       # definice, umoznujici provest test, zda je kontejner v poradku
       test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
-      interval: 60s
-      retries: 3
-      start_period: 60s
+      interval: 20s
+      retries: 10
+      start_period: 20s
       timeout: 10s
-    restart: on-failure:3 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+    
+    restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+    
     depends_on:
-      - postgres
-      - yugabyte1
-      - yugabyte2
-      - yugabyte3
+      postgres:
+        condition: service_started
+      yugabyte1:
+        condition: service_started
+      yugabyte2:
+        condition: service_started
+      yugabyte3:
+        condition: service_started
+      yugabyte-init:
+        condition: service_completed_successfully
+      # gql_facilities:
+      #   condition: service_healthy
+
     ports:
       - 31126:8000  # ray made up this port number
 
@@ -231,19 +270,33 @@ services:
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_DB=${POSTGRES_DB}
       - DEMO=true
+    
     healthcheck:
       # definice, umoznujici provest test, zda je kontejner v poradku
       test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
-      interval: 60s
-      retries: 3
-      start_period: 60s
+      interval: 20s
+      retries: 10
+      start_period: 20s
       timeout: 10s
-    restart: on-failure:3 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+    
+    restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+    
     depends_on:
-      - postgres
-      - yugabyte1
-      - yugabyte2
-      - yugabyte3
+      postgres:
+        condition: service_started
+      yugabyte1:
+        condition: service_started
+      yugabyte2:
+        condition: service_started
+      yugabyte3:
+        condition: service_started
+      yugabyte-init:
+        condition: service_completed_successfully
+      # gql_forms:
+      #   condition: service_healthy
+      # gql_facilities:
+      #   condition: service_healthy
+    
     ports:
       - 32801:8000 # ray made up this port number
   
@@ -262,27 +315,43 @@ services:
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_DB=${POSTGRES_DB}
       - DEMO=true
-    # healthcheck:
-    #   # definice, umoznujici provest test, zda je kontejner v poradku
-    #   test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
-    #   interval: 60s
-    #   retries: 3
-    #   start_period: 60s
-    #   timeout: 10s
-    restart: on-failure:3 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+    
+    healthcheck:
+      # definice, umoznujici provest test, zda je kontejner v poradku
+      test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
+      interval: 20s
+      retries: 10
+      start_period: 20s
+      timeout: 10s
+    
+    restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+    
     depends_on:
-      - postgres
-      - yugabyte1
-      - yugabyte2
-      - yugabyte3
+      postgres:
+        condition: service_started
+      yugabyte1:
+        condition: service_started
+      yugabyte2:
+        condition: service_started
+      yugabyte3:
+        condition: service_started
+      yugabyte-init:
+        condition: service_completed_successfully
+      # gql_forms:
+      #   condition: service_healthy
+      # gql_facilities:
+      #   condition: service_healthy
+      # gql_events:
+      #   condition: service_healthy
+    
     ports:
-      - 8000:8000
+      - 32811:8000 # ray made up this port number
 
 
 
 
   gql_lessons:
-    image: luknowo/gql_lessons
+    image: luknowo/gql_lessons:latest
     # container_name: z-gql_lessons_Novotny-Veverka
     # build:
     #   # context definuje cestu k popisu
@@ -294,16 +363,33 @@ services:
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_DB=${POSTGRES_DB}
       - DEMO=true
-    # healthcheck:
-    #   # definice, umoznujici provest test, zda je kontejner v poradku
-    #   test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
-    #   interval: 60s
-    #   retries: 3
-    #   start_period: 60s
-    #   timeout: 10s
-    restart: on-failure:3 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+    healthcheck:
+      # definice, umoznujici provest test, zda je kontejner v poradku
+      test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
+      interval: 20s
+      retries: 10
+      start_period: 20s
+      timeout: 10s
+    restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+    
     depends_on:
-      - postgres
+      postgres:
+        condition: service_started
+      yugabyte1:
+        condition: service_started
+      yugabyte2:
+        condition: service_started
+      yugabyte3:
+        condition: service_started
+      yugabyte-init:
+        condition: service_completed_successfully
+      # gql_forms:
+      #   condition: service_healthy
+      # gql_facilities:
+      #   condition: service_healthy
+      # gql_events:
+      #   condition: service_healthy
+
     ports:
       - 31124:8000 # ray made up this port number
 
@@ -311,7 +397,7 @@ services:
 
 
   gql_projects:
-    image: johnysmidy/gql_projects
+    image: johnysmidy/gql_projects:latest
     # container_name: z-gql_projects_Smid-Spanik
     # build:
     #   # context definuje cestu k popisu
@@ -323,16 +409,38 @@ services:
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_DB=${POSTGRES_DB}
       - DEMO=true
-    # healthcheck:
-    #   # definice, umoznujici provest test, zda je kontejner v poradku
-    #   test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
-    #   interval: 60s
-    #   retries: 3
-    #   start_period: 60s
-    #   timeout: 10s
-    restart: on-failure:3 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+    healthcheck:
+      # definice, umoznujici provest test, zda je kontejner v poradku
+      test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
+      interval: 20s
+      retries: 10
+      start_period: 20s
+      timeout: 10s
+    restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+    
     depends_on:
-      - postgres
+      postgres:
+        condition: service_started
+      yugabyte1:
+        condition: service_started
+      yugabyte2:
+        condition: service_started
+      yugabyte3:
+        condition: service_started
+      yugabyte-init:
+        condition: service_completed_successfully
+      # gql_forms:
+      #   condition: service_healthy
+      # gql_facilities:
+      #   condition: service_healthy
+      # gql_events:
+      #   condition: service_healthy
+      # gql_granting:
+      #   condition: service_healthy
+      # gql_lessons:
+      #   condition: service_healthy
+
+
     ports:
       - 32800:8000
 
@@ -340,7 +448,7 @@ services:
 
 
   gql_ug:
-    image: kavic/ug
+    image: kavic/ug:latest
     container_name: z-ug_Holik-Kava
     # build:
     #   # context definuje cestu k popisu
@@ -353,19 +461,40 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
       - DEMO=true
       - GQL_PROXY=http://apollo:3000/api/gql/
+    
     depends_on:
       # kontejnery, ktere musi byt spusteny drive
-      - postgres
-    # healthcheck:
-    #   # definice, umoznujici provest test, zda je kontejner v poradku
-    #   test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
-    #   interval: 60s
-    #   retries: 3
-    #   start_period: 60s
-    #   timeout: 10s
+      postgres:
+        condition: service_started
+      yugabyte1:
+        condition: service_started
+      yugabyte2:
+        condition: service_started
+      yugabyte3:
+        condition: service_started
+      yugabyte-init:
+        condition: service_completed_successfully
+      # gql_forms:
+      #   condition: service_healthy
+      # gql_facilities:
+      #   condition: service_healthy
+      # gql_events:
+      #   condition: service_healthy
+      # gql_granting:
+      #   condition: service_healthy
+      # gql_lessons:
+      #   condition: service_healthy
+
+    healthcheck:
+      # definice, umoznujici provest test, zda je kontejner v poradku
+      test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
+      interval: 20s
+      retries: 10
+      start_period: 20s
+      timeout: 10s
     # volumes:
     #   - ./_extradata:/app/extradata
-    restart: on-failure:3 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+    restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
     ports: #v deploymentu by nebylo zadne mapovani portu
     #   # vnejsi port : port, kde sluzbu poskytuje kontejner
       - 31120:8000
@@ -374,7 +503,7 @@ services:
 
 
   gql_workflow:
-    image: taido028/gql_workflow
+    image: taido028/gql_workflow:latest
     container_name: z-gql_workflow_Bui-Do
     # build:
     #   # context definuje cestu k popisu
@@ -386,16 +515,41 @@ services:
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_DB=${POSTGRES_DB}
       - DEMO=true
-    # healthcheck:
-    #   # definice, umoznujici provest test, zda je kontejner v poradku
-    #   test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
-    #   interval: 60s
-    #   retries: 3
-    #   start_period: 60s
-    #   timeout: 10s
-    restart: on-failure:3 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+    healthcheck:
+      # definice, umoznujici provest test, zda je kontejner v poradku
+      test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
+      interval: 20s
+      retries: 10
+      start_period: 20s
+      timeout: 10s
+    restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+    
     depends_on:
-      - postgres
+      postgres:
+        condition: service_started
+      yugabyte1:
+        condition: service_started
+      yugabyte2:
+        condition: service_started
+      yugabyte3:
+        condition: service_started
+      yugabyte-init:
+        condition: service_completed_successfully
+      # gql_forms:
+      #   condition: service_healthy
+      # gql_facilities:
+      #   condition: service_healthy
+      # gql_events:
+      #   condition: service_healthy
+      # gql_granting:
+      #   condition: service_healthy
+      # gql_lessons:
+      #   condition: service_healthy
+      # gql_projects:
+      #   condition: service_healthy
+      # gql_ug:
+      #   condition: service_healthy
+
     ports:
       - 31123:8000
 
@@ -403,7 +557,7 @@ services:
 
 
   gql_workflows:
-    image: angell1337/gql_workflows
+    image: angell1337/gql_workflows:latest
     container_name: z-gql_workflows_Krivohlavek-Samolej
     # build:
     #   # context definuje cestu k popisu
@@ -415,16 +569,41 @@ services:
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_DB=${POSTGRES_DB}
       - DEMO=true
-    # healthcheck:
-    #   # definice, umoznujici provest test, zda je kontejner v poradku
-    #   test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
-    #   interval: 60s
-    #   retries: 3
-    #   start_period: 60s
-    #   timeout: 10s
-    restart: on-failure:3 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+    healthcheck:
+      # definice, umoznujici provest test, zda je kontejner v poradku
+      test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
+      interval: 20s
+      retries: 10
+      start_period: 20s
+      timeout: 10s
+    restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+    
     depends_on:
-      - postgres
+      postgres:
+        condition: service_started
+      yugabyte1:
+        condition: service_started
+      yugabyte2:
+        condition: service_started
+      yugabyte3:
+        condition: service_started
+      yugabyte-init:
+        condition: service_completed_successfully
+      # gql_forms:
+      #   condition: service_healthy
+      # gql_facilities:
+      #   condition: service_healthy
+      # gql_events:
+      #   condition: service_healthy
+      # gql_granting:
+      #   condition: service_healthy
+      # gql_lessons:
+      #   condition: service_healthy
+      # gql_projects:
+      #   condition: service_healthy
+      # gql_ug:
+      #   condition: service_healthy
+    
     ports:
       - 31133:8000  # ray made up this port number
 
@@ -432,7 +611,7 @@ services:
 
 
   gql_documents:
-    image: tadblack/gql_documents
+    image: tadblack/gql_documents:latest
     container_name: z-gql_documents_Masek-Paldus
     # build:
     #   # context definuje cestu k popisu
@@ -444,16 +623,45 @@ services:
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_DB=${POSTGRES_DB}
       - DEMO=true
-    # healthcheck:
-    #   # definice, umoznujici provest test, zda je kontejner v poradku
-    #   test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
-    #   interval: 60s
-    #   retries: 3
-    #   start_period: 60s
-    #   timeout: 10s
-    restart: on-failure:3 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+    healthcheck:
+      # definice, umoznujici provest test, zda je kontejner v poradku
+      test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
+      interval: 20s
+      retries: 10
+      start_period: 20s
+      timeout: 10s
+    restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+    
     depends_on:
-      - postgres
+      postgres:
+        condition: service_started
+      yugabyte1:
+        condition: service_started
+      yugabyte2:
+        condition: service_started
+      yugabyte3:
+        condition: service_started
+      yugabyte-init:
+        condition: service_completed_successfully
+      # gql_forms:
+      #   condition: service_healthy
+      # gql_facilities:
+      #   condition: service_healthy
+      # gql_events:
+      #   condition: service_healthy
+      # gql_granting:
+      #   condition: service_healthy
+      # gql_lessons:
+      #   condition: service_healthy
+      # gql_projects:
+      #   condition: service_healthy
+      # gql_ug:
+      #   condition: service_healthy
+      # gql_workflow:
+      #   condition: service_healthy
+      # gql_workflows:
+      #   condition: service_healthy
+    
     ports:
       - 20088:8000
 
@@ -461,7 +669,7 @@ services:
 
 
   gql_presences:
-    image: davidnemecek4227/gql_presences
+    image: davidnemecek4227/gql_presences:latest
     container_name: z-gql_presences_Nemecek
     # build:
     #   # context definuje cestu k popisu
@@ -473,16 +681,46 @@ services:
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_DB=${POSTGRES_DB}
       - DEMO=true
-    # healthcheck:
-    #   # definice, umoznujici provest test, zda je kontejner v poradku
-    #   test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
-    #   interval: 60s
-    #   retries: 3
-    #   start_period: 60s
-    #   timeout: 10s
-    restart: on-failure:3 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+    healthcheck:
+      # definice, umoznujici provest test, zda je kontejner v poradku
+      test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
+      interval: 20s
+      retries: 10
+      start_period: 20s
+      timeout: 10s
+    restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+    
     depends_on:
-      - postgres
+      postgres:
+        condition: service_started
+      yugabyte1:
+        condition: service_started
+      yugabyte2:
+        condition: service_started
+      yugabyte3:
+        condition: service_started
+      yugabyte-init:
+        condition: service_completed_successfully
+      # gql_forms:
+      #   condition: service_healthy
+      # gql_facilities:
+      #   condition: service_healthy
+      # gql_events:
+      #   condition: service_healthy
+      # gql_granting:
+      #   condition: service_healthy
+      # gql_lessons:
+      #   condition: service_healthy
+      # gql_projects:
+      #   condition: service_healthy
+      # gql_ug:
+      #   condition: service_healthy
+      # gql_workflow:
+      #   condition: service_healthy
+      # gql_workflows:
+      #   condition: service_healthy
+      
+    
     ports:
       - 31121:8000  # ray made this port number up
 
@@ -490,7 +728,7 @@ services:
 
 
   gql_publications_a:
-    image: kozmycz/gql_publications_a
+    image: kozmycz/gql_publications_a:latest
     container_name: z-gql_publications_a_Kozma
     # build:
     #   # context definuje cestu k popisu
@@ -502,16 +740,49 @@ services:
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_DB=${POSTGRES_DB}
       - DEMO=true
-    # healthcheck:
-    #   # definice, umoznujici provest test, zda je kontejner v poradku
-    #   test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
-    #   interval: 60s
-    #   retries: 3
-    #   start_period: 60s
-    #   timeout: 10s
-    restart: on-failure:3 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+    healthcheck:
+      # definice, umoznujici provest test, zda je kontejner v poradku
+      test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
+      interval: 20s
+      retries: 10
+      start_period: 20s
+      timeout: 10s
+    restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+    
     depends_on:
-      - postgres
+      postgres:
+        condition: service_started
+      yugabyte1:
+        condition: service_started
+      yugabyte2:
+        condition: service_started
+      yugabyte3:
+        condition: service_started
+      yugabyte-init:
+        condition: service_completed_successfully
+      # gql_forms:
+      #   condition: service_healthy
+      # gql_facilities:
+      #   condition: service_healthy
+      # gql_events:
+      #   condition: service_healthy
+      # gql_granting:
+      #   condition: service_healthy
+      # gql_lessons:
+      #   condition: service_healthy
+      # gql_projects:
+      #   condition: service_healthy
+      # gql_ug:
+      #   condition: service_healthy
+      # gql_workflow:
+      #   condition: service_healthy
+      # gql_workflows:
+      #   condition: service_healthy
+      # gql_documents:
+      #   condition: service_healthy
+      # gql_presences:
+      #   condition: service_healthy
+
     ports:
       - 31223:8000  # ray made this port number up
 
@@ -531,16 +802,49 @@ services:
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_DB=${POSTGRES_DB}
       - DEMO=true
-    # healthcheck:
-    #   # definice, umoznujici provest test, zda je kontejner v poradku
-    #   test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
-    #   interval: 60s
-    #   retries: 3
-    #   start_period: 60s
-    #   timeout: 10s
-    restart: on-failure:3 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+    healthcheck:
+      # definice, umoznujici provest test, zda je kontejner v poradku
+      test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
+      interval: 20s
+      retries: 10
+      start_period: 20s
+      timeout: 10s
+    restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+    
     depends_on:
-      - postgres
+      postgres:
+        condition: service_started
+      yugabyte1:
+        condition: service_started
+      yugabyte2:
+        condition: service_started
+      yugabyte3:
+        condition: service_started
+      yugabyte-init:
+        condition: service_completed_successfully
+      # gql_forms:
+      #   condition: service_healthy
+      # gql_facilities:
+      #   condition: service_healthy
+      # gql_events:
+      #   condition: service_healthy
+      # gql_granting:
+      #   condition: service_healthy
+      # gql_lessons:
+      #   condition: service_healthy
+      # gql_projects:
+      #   condition: service_healthy
+      # gql_ug:
+      #   condition: service_healthy
+      # gql_workflow:
+      #   condition: service_healthy
+      # gql_workflows:
+      #   condition: service_healthy
+      # gql_documents:
+      #   condition: service_healthy
+      # gql_presences:
+      #   condition: service_healthy
+    
     ports:
       - 31122:8000  # ray made this port number up
 

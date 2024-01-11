@@ -68,6 +68,9 @@ created database "data"
 
 ## Cockroachdb
 
+Inabiliity to connect to CockroachDB via asyncpg
+    https://github.com/sqlalchemy/sqlalchemy/issues/6825
+
 After running dokcer compose, run: 
 
     docker exec -it roach1 ./cockroach --host=roach1:26357 init --insecure
@@ -91,11 +94,11 @@ in node1 container for a test of the cluster.
 
 
 
-Run: 
+Use
 
-    cockroach sql --insecure --host=localhost:26257 
+    docker exec -it roach1 ./cockroach sql --host=roach2:26258 --insecure
 
-in roach1 container for sql queries
+for sql queries.
 
 
 
