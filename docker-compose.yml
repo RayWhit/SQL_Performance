@@ -82,7 +82,7 @@ services:
     restart: on-failure:10
 
 
-  # creates database data after yugabyte starts
+  # creates database "data" after yugabyte nodes start
   yugabyte-init:
     image: yugabytedb/yugabyte:2.19.3.0-b140
     container_name: yugabyte-init
@@ -91,24 +91,48 @@ services:
       - yugabyte2
       - yugabyte3
     entrypoint: /bin/sh
-    command: -c "sleep 20 && /home/yugabyte/bin/ysqlsh --echo-queries --host yugabyte1 -U postgres -d postgres -c 'CREATE DATABASE data;'"
+    command: -c "sleep 10 && /home/yugabyte/bin/ysqlsh --echo-queries --host yugabyte1 -U postgres -d postgres -c 'CREATE DATABASE data;'"
 
 
 
 ############# apollo #######################
   apollo:
-    image: hrbolek/apollo_federation
+    image: hrbolek/apollo_federation:latest
+    container_name: apollo
     environment:
       # promenne, ktere lze cist v kontejneru
       - PORT=3000
       - |
         SERVICES=
         [
-          {"name": "ug", "url": "http://gql_ug:8000/gql"}
-          
-          
+          {"name": "ug", "url": "http://gql_ug_hrbolek:8000/gql"},
+          {"name": "events", "url": "http://gql_events:8000/gql"},
+          {"name": "documents", "url": "http://gql_documents:8000/gql"}
         ]
       # ug has to be part of services
+
+      # {"name": "ug", "url": "http://gql_ug_hrbolek:8000/gql"},
+      # {"name": "events", "url": "http://gql_events:8000/gql"},
+      # {"name": "documents", "url": "http://gql_documents:8000/gql"}
+
+
+      # services
+      # {"name": "ug", "url": "http://gql_ug_hrbolek:8000/gql"},
+      # {"name": "ug", "url": "http://gql_ug:8000/gql"},
+      # {"name": "forms", "url": "http://gql_forms:8000/gql"},
+      # {"name": "facilities", "url": "http://gql_facilities:8000/gql"},
+      # {"name": "events", "url": "http://gql_events:8000/gql"},
+      # {"name": "externalids", "url": "http://gql_externalids:8000/gql"},
+      # {"name": "granting", "url": "http://gql_granting:8000/gql"},
+      # {"name": "lessons", "url": "http://gql_lessons:8000/gql"},
+      # {"name": "projects", "url": "http://gql_projects:8000/gql"},
+      # {"name": "workflow", "url": "http://gql_workflow:8000/gql"},
+      # {"name": "workflows", "url": "http://gql_workflows:8000/gql"},
+      # {"name": "documents", "url": "http://gql_documents:8000/gql"},
+      # {"name": "presences", "url": "http://gql_presences:8000/gql"},
+      # {"name": "publications_a", "url": "http://gql_publications_a:8000/gql"},
+      # {"name": "grantinga", "url": "http://gql_grantinga:8000/gql"}
+
     healthcheck:
       # definice, umoznujici provest test, zda je kontejner v poradku (vsimnete si portu a srovnejte s portem v environment)
       interval: 60s
@@ -137,7 +161,7 @@ services:
 ######################## student containers ##############################
   gql_forms:
     image: hrbolek/gql_forms:latest
-    #container_name: z-gql_forms_Hrbolek
+    container_name: z-gql_forms_Hrbolek
     # build:
     #   # context definuje cestu k popisu
     #   context: .
@@ -169,8 +193,41 @@ services:
         condition: service_completed_successfully
     ports:
       - 31127:8000  # ray made this port number up
+  
+  
+  gql_ug_hrbolek:
+    image: hrbolek/gql_ug:latest
+    container_name: z-gql_ug_Hrbolek
 
-
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - JWTPUBLICKEYURL=http://frontend:8000/oauth/publickey
+      - JWTRESOLVEUSERPATHURL=http://frontend:8000/oauth/userinfo
+      - DEMO=True
+    
+    healthcheck:
+      # definice, umoznujici provest test, zda je kontejner v poradku
+      test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql || exit 1"
+      interval: 30s
+      retries: 10
+      start_period: 30s
+      timeout: 10s
+    restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+    
+    depends_on:
+      postgres:
+        condition: service_started
+      yugabyte1:
+        condition: service_started
+      yugabyte2:
+        condition: service_started
+      yugabyte3:
+        condition: service_started
+      yugabyte-init:
+        condition: service_completed_successfully
 
 
   gql_facilities:
@@ -216,7 +273,7 @@ services:
 
   gql_events:
     image: nafreju2/gql_events:main
-    #container_name: z-gql_events_Bures-Sedlackova
+    container_name: z-gql_events_Bures-Sedlackova
     # build:
     #   # context definuje cestu k popisu
     #   context: .
@@ -259,7 +316,7 @@ services:
 
   gql_externalids:
     image: gjia/gql_externalids:main
-    #container_name: z-gql_externalids_Quach-Nguyen
+    container_name: z-gql_externalids_Quach-Nguyen
     # build:
     #   # context definuje cestu k popisu
     #   context: .
@@ -304,7 +361,7 @@ services:
 
   gql_granting:
     image: oklement/gql_granting:latest
-    # container_name: z-gql_granting_Klement-Novotny-Wala
+    container_name: z-gql_granting_Klement-Novotny-Wala
     # build:
     #   # context definuje cestu k popisu
     #   context: .
@@ -352,7 +409,7 @@ services:
 
   gql_lessons:
     image: luknowo/gql_lessons:latest
-    # container_name: z-gql_lessons_Novotny-Veverka
+    container_name: z-gql_lessons_Novotny-Veverka
     # build:
     #   # context definuje cestu k popisu
     #   context: .
@@ -398,7 +455,7 @@ services:
 
   gql_projects:
     image: johnysmidy/gql_projects:latest
-    # container_name: z-gql_projects_Smid-Spanik
+    container_name: z-gql_projects_Smid-Spanik
     # build:
     #   # context definuje cestu k popisu
     #   context: .
@@ -449,7 +506,7 @@ services:
 
   gql_ug:
     image: kavic/ug:latest
-    container_name: z-ug_Holik-Kava
+    container_name: z-gql_ug_Holik-Kava
     # build:
     #   # context definuje cestu k popisu
     #   context: ./
