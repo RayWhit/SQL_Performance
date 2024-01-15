@@ -83,7 +83,12 @@ graphql_queries = {
   }""",
 
   "gql_grantinga" : """{
-    ************************ dont have yet *****************************
+    acclassificationTypePage {
+      id
+      name
+      nameEn
+      lastchange
+    }
   }""",
 
   "gql_lessons" : """{
@@ -97,7 +102,14 @@ graphql_queries = {
   }""",
 
   "gql_preferences" : """{
-    ************************ dont have yet *****************************
+    preferenceSettingsPage {
+      id
+      name
+      nameEn
+      created
+      order
+      preferenceSettingsTypeId
+    }
   }""",
 
   "gql_presences" : """{
@@ -192,7 +204,7 @@ for query in graphql_queries:
 
 
 
-  for i in range(1000):
+  for i in range(100):
     start_time = time.time()
 
     # Send the GraphQL query to the Apollo Federation gateway
@@ -225,8 +237,8 @@ for query in graphql_queries:
     print("Average time: ", 1000*sum(times)/len(times), " ms")
     print("Variance: ", np.var(numpy_times).item()*1000, " ms")
 
-    plt.hist(numpy_times, edgecolor='black', bins=20)
-    plt.show()
+    # plt.hist(numpy_times, edgecolor='black', bins=20)
+    # plt.show()
 
   print()
   
