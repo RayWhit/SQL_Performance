@@ -21,19 +21,6 @@ graphql_queries = {
     }
   }""",
 
-  "gql_events" : """
-  {
-    eventGroupPage {
-      id
-      groupId
-      eventId
-      createdby
-      created
-      changedby
-      lastchange
-    }
-  }""",
-
   "gql_documents" : """{
     documentsPage {
       author
@@ -46,6 +33,46 @@ graphql_queries = {
     }
   }""",
 
+  "gql_events" : """
+  {
+    eventGroupPage {
+      id
+      groupId
+      eventId
+      created
+      lastchange
+    }
+  }""",
+
+  "gql_externalids" : """{
+    externalidtypePage {
+      id
+      name
+      lastchange
+      created
+      nameEn
+    }
+  }""",
+
+  "gql_facilities" : """{
+    facilityEventStateTypePage {
+      id
+      name
+      nameEn
+      lastchange
+    }
+  }""",
+
+  "gql_forms" : """{
+    formCategoryPage {
+      id
+      name
+      nameEn
+      created
+      lastchange
+    }
+  }""",
+
   "gql_granting" : """{
     programPage {
       id
@@ -53,6 +80,10 @@ graphql_queries = {
       lastchange
       nameEn
     }
+  }""",
+
+  "gql_grantinga" : """{
+    ************************ dont have yet *****************************
   }""",
 
   "gql_lessons" : """{
@@ -63,6 +94,10 @@ graphql_queries = {
       length
       order
     }
+  }""",
+
+  "gql_preferences" : """{
+    ************************ dont have yet *****************************
   }""",
 
   "gql_presences" : """{
@@ -79,6 +114,15 @@ graphql_queries = {
     }
   }""",
 
+  "gql_projects" : """{
+    projectCategoryPage {
+      id
+      lastchange
+      name
+      nameEn
+    }
+  }""",
+
   "gql_publications" : """{
     publicationPage {
       id
@@ -89,7 +133,30 @@ graphql_queries = {
       reference
       valid
     }
+  }""",
+
+  "gql_surveys" : """{
+    surveyPage {
+      id
+      name
+      lastchange
+    }
+  }""",
+
+  "gql_workflow" : """{
+    ************************ dont have yet *****************************
+  }""",
+  
+
+  "gql_workflows" : """{
+    authorizationGroupPage {
+      id
+      created
+      accesslevel
+      lastchange
+    }
   }"""
+
 }
 
 
@@ -125,7 +192,7 @@ for query in graphql_queries:
 
 
 
-  for i in range(100):
+  for i in range(1000):
     start_time = time.time()
 
     # Send the GraphQL query to the Apollo Federation gateway
@@ -156,9 +223,10 @@ for query in graphql_queries:
     numpy_times = np.asarray(times, dtype=np.float32)
     print(kstest(numpy_times, 'norm'))
     print("Average time: ", 1000*sum(times)/len(times), " ms")
-    print("Variance: ", np.var(numpy_times))
-    #plt.hist(numpy_times, edgecolor='black', bins=20)
-    #plt.show()
+    print("Variance: ", np.var(numpy_times).item()*1000, " ms")
+
+    plt.hist(numpy_times, edgecolor='black', bins=20)
+    plt.show()
 
   print()
   

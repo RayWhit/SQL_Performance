@@ -106,13 +106,21 @@ services:
         SERVICES=
         [
           {"name": "ug", "url": "http://gql_ug_hrbolek:8000/gql"},
+          {"name": "forms", "url": "http://gql_forms:8000/gql"},
           {"name": "events", "url": "http://gql_events:8000/gql"},
+          {"name": "externalids", "url": "http://gql_externalids:8000/gql"},
+          {"name": "granting", "url": "http://gql_granting:8000/gql"},
+          {"name": "workflows", "url": "http://gql_workflows:8000/gql"},
           {"name": "documents", "url": "http://gql_documents:8000/gql"}
         ]
       # ug has to be part of services
 
       # {"name": "ug", "url": "http://gql_ug_hrbolek:8000/gql"},
+      # {"name": "forms", "url": "http://gql_forms:8000/gql"},
       # {"name": "events", "url": "http://gql_events:8000/gql"},
+      # {"name": "externalids", "url": "http://gql_externalids:8000/gql"},
+      # {"name": "granting", "url": "http://gql_granting:8000/gql"},
+      # {"name": "workflows", "url": "http://gql_workflows:8000/gql"},
       # {"name": "documents", "url": "http://gql_documents:8000/gql"}
 
 
@@ -125,13 +133,15 @@ services:
       # {"name": "externalids", "url": "http://gql_externalids:8000/gql"},
       # {"name": "granting", "url": "http://gql_granting:8000/gql"},
       # {"name": "lessons", "url": "http://gql_lessons:8000/gql"},
-      # {"name": "projects", "url": "http://gql_projects:8000/gql"},
+      # {"name": "projects", "url": "http://gql_projects:8000/gql/"},
       # {"name": "workflow", "url": "http://gql_workflow:8000/gql"},
       # {"name": "workflows", "url": "http://gql_workflows:8000/gql"},
       # {"name": "documents", "url": "http://gql_documents:8000/gql"},
       # {"name": "presences", "url": "http://gql_presences:8000/gql"},
       # {"name": "publications_a", "url": "http://gql_publications_a:8000/gql"},
-      # {"name": "grantinga", "url": "http://gql_grantinga:8000/gql"}
+      # {"name": "grantinga", "url": "http://gql_grantinga:8000/gql"},
+      # {"name": "preferences", "url": "http://gql_preferences:8000/gql"},
+      # {"name": "surveys", "url": "http://gql_surveys:8000/gql"}
 
     healthcheck:
       # definice, umoznujici provest test, zda je kontejner v poradku (vsimnete si portu a srovnejte s portem v environment)
@@ -158,6 +168,17 @@ services:
 
 
 
+######################## frontend ##############################
+  frontend:
+    image: hrbolek/frontend
+    container_name: frontend
+    environment:
+      - DEMO=False
+      - GQL_PROXY=http://apollo:3000/api/gql/
+    ports:
+      - 33080:8000
+
+
 ######################## student containers ##############################
   gql_forms:
     image: hrbolek/gql_forms:latest
@@ -171,6 +192,9 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_DB=${POSTGRES_DB}
+      - GQLUG_ENDPOINT_URL=http://gql_ug_hrbolek:8000/gql
+      - JWTPUBLICKEYURL=http://frontend:8000/oauth/publickey
+      - JWTRESOLVEUSERPATHURL=http://frontend:8000/oauth/userinfo
       - DEMO=True
     healthcheck:
       # definice, umoznujici provest test, zda je kontejner v poradku
@@ -204,6 +228,7 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_DB=${POSTGRES_DB}
+      - GQLUG_ENDPOINT_URL=http://gql_ug_hrbolek:8000/gql
       - JWTPUBLICKEYURL=http://frontend:8000/oauth/publickey
       - JWTRESOLVEUSERPATHURL=http://frontend:8000/oauth/userinfo
       - DEMO=True
@@ -231,7 +256,7 @@ services:
 
 
   gql_facilities:
-    image: vitekr/gql_facilities:latest
+    image: vitekr/gql_facilities:v1.2.6
     container_name: z-gql_facilities_Rout-Stacha
     # build:
     #   # context definuje cestu k popisu
@@ -242,6 +267,9 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_DB=${POSTGRES_DB}
+      - GQLUG_ENDPOINT_URL=http://gql_ug_hrbolek:8000/gql
+      - JWTPUBLICKEYURL=http://frontend:8000/oauth/publickey
+      - JWTRESOLVEUSERPATHURL=http://frontend:8000/oauth/userinfo
       - DEMO=true
       # kontejnery, ktere musi byt spusteny drive
     
@@ -260,9 +288,9 @@ services:
     healthcheck:
       # definice, umoznujici provest test, zda je kontejner v poradku
       test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
-      interval: 30s
+      interval: 60s
       retries: 10
-      start_period: 30s
+      start_period: 60s
       timeout: 10s
     restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
     ports: #v deploymentu by nebylo zadne mapovani portu
@@ -272,7 +300,7 @@ services:
 
 
   gql_events:
-    image: nafreju2/gql_events:main
+    image: nafreju2/gql_events:latest
     container_name: z-gql_events_Bures-Sedlackova
     # build:
     #   # context definuje cestu k popisu
@@ -283,6 +311,9 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_DB=${POSTGRES_DB}
+      - GQLUG_ENDPOINT_URL=http://gql_ug_hrbolek:8000/gql
+      - JWTPUBLICKEYURL=http://frontend:8000/oauth/publickey
+      - JWTRESOLVEUSERPATHURL=http://frontend:8000/oauth/userinfo
       - DEMO=true
     
     healthcheck:
@@ -308,6 +339,8 @@ services:
         condition: service_completed_successfully
       # gql_facilities:
       #   condition: service_healthy
+      # gql_facilities:
+      #   condition: service_healthy
 
     ports:
       - 31126:8000  # ray made up this port number
@@ -326,6 +359,9 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_DB=${POSTGRES_DB}
+      - GQLUG_ENDPOINT_URL=http://gql_ug_hrbolek:8000/gql
+      - JWTPUBLICKEYURL=http://frontend:8000/oauth/publickey
+      - JWTRESOLVEUSERPATHURL=http://frontend:8000/oauth/userinfo
       - DEMO=true
     
     healthcheck:
@@ -371,7 +407,10 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_DB=${POSTGRES_DB}
-      - DEMO=true
+      - GQLUG_ENDPOINT_URL=http://gql_ug_hrbolek:8000/gql
+      - JWTPUBLICKEYURL=http://frontend:8000/oauth/publickey
+      - JWTRESOLVEUSERPATHURL=http://frontend:8000/oauth/userinfo
+      - DEMO=True
     
     healthcheck:
       # definice, umoznujici provest test, zda je kontejner v poradku
@@ -419,6 +458,9 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_DB=${POSTGRES_DB}
+      - GQLUG_ENDPOINT_URL=http://gql_ug_hrbolek:8000/gql
+      - JWTPUBLICKEYURL=http://frontend:8000/oauth/publickey
+      - JWTRESOLVEUSERPATHURL=http://frontend:8000/oauth/userinfo
       - DEMO=true
     healthcheck:
       # definice, umoznujici provest test, zda je kontejner v poradku
@@ -454,7 +496,7 @@ services:
 
 
   gql_projects:
-    image: johnysmidy/gql_projects:latest
+    image: frajxd/gql_projects:latest
     container_name: z-gql_projects_Smid-Spanik
     # build:
     #   # context definuje cestu k popisu
@@ -465,6 +507,9 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_DB=${POSTGRES_DB}
+      - GQLUG_ENDPOINT_URL=http://gql_ug_hrbolek:8000/gql
+      - JWTPUBLICKEYURL=http://frontend:8000/oauth/publickey
+      - JWTRESOLVEUSERPATHURL=http://frontend:8000/oauth/userinfo
       - DEMO=true
     healthcheck:
       # definice, umoznujici provest test, zda je kontejner v poradku
@@ -516,6 +561,9 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_DB=${POSTGRES_DB}
+      - GQLUG_ENDPOINT_URL=http://gql_ug_hrbolek:8000/gql
+      - JWTPUBLICKEYURL=http://frontend:8000/oauth/publickey
+      - JWTRESOLVEUSERPATHURL=http://frontend:8000/oauth/userinfo
       - DEMO=true
       - GQL_PROXY=http://apollo:3000/api/gql/
     
@@ -560,7 +608,7 @@ services:
 
 
   gql_workflow:
-    image: taido028/gql_workflow:latest
+    image: taido028/gql_workflow:Latest_tag
     container_name: z-gql_workflow_Bui-Do
     # build:
     #   # context definuje cestu k popisu
@@ -571,6 +619,9 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_DB=${POSTGRES_DB}
+      - GQLUG_ENDPOINT_URL=http://gql_ug_hrbolek:8000/gql
+      - JWTPUBLICKEYURL=http://frontend:8000/oauth/publickey
+      - JWTRESOLVEUSERPATHURL=http://frontend:8000/oauth/userinfo
       - DEMO=true
     healthcheck:
       # definice, umoznujici provest test, zda je kontejner v poradku
@@ -625,6 +676,9 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_DB=${POSTGRES_DB}
+      - GQLUG_ENDPOINT_URL=http://gql_ug_hrbolek:8000/gql
+      - JWTPUBLICKEYURL=http://frontend:8000/oauth/publickey
+      - JWTRESOLVEUSERPATHURL=http://frontend:8000/oauth/userinfo
       - DEMO=true
     healthcheck:
       # definice, umoznujici provest test, zda je kontejner v poradku
@@ -679,6 +733,9 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_DB=${POSTGRES_DB}
+      - GQLUG_ENDPOINT_URL=http://gql_ug_hrbolek:8000/gql
+      - JWTPUBLICKEYURL=http://frontend:8000/oauth/publickey
+      - JWTRESOLVEUSERPATHURL=http://frontend:8000/oauth/userinfo
       - DEMO=true
     healthcheck:
       # definice, umoznujici provest test, zda je kontejner v poradku
@@ -737,6 +794,9 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_DB=${POSTGRES_DB}
+      - GQLUG_ENDPOINT_URL=http://gql_ug_hrbolek:8000/gql
+      - JWTPUBLICKEYURL=http://frontend:8000/oauth/publickey
+      - JWTRESOLVEUSERPATHURL=http://frontend:8000/oauth/userinfo
       - DEMO=true
     healthcheck:
       # definice, umoznujici provest test, zda je kontejner v poradku
@@ -796,6 +856,9 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_DB=${POSTGRES_DB}
+      - GQLUG_ENDPOINT_URL=http://gql_ug_hrbolek:8000/gql
+      - JWTPUBLICKEYURL=http://frontend:8000/oauth/publickey
+      - JWTRESOLVEUSERPATHURL=http://frontend:8000/oauth/userinfo
       - DEMO=true
     healthcheck:
       # definice, umoznujici provest test, zda je kontejner v poradku
@@ -848,7 +911,7 @@ services:
 
   gql_grantinga:
     image: hieuductran231/gql_granting:main
-    container_name: z-gql_granting_Tran
+    container_name: z-gql_grantinga_Tran
     # build:
     #   # context definuje cestu k popisu
     #   context: .
@@ -858,6 +921,9 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_DB=${POSTGRES_DB}
+      - GQLUG_ENDPOINT_URL=http://gql_ug_hrbolek:8000/gql
+      - JWTPUBLICKEYURL=http://frontend:8000/oauth/publickey
+      - JWTRESOLVEUSERPATHURL=http://frontend:8000/oauth/userinfo
       - DEMO=true
     healthcheck:
       # definice, umoznujici provest test, zda je kontejner v poradku
@@ -905,3 +971,129 @@ services:
     ports:
       - 31122:8000  # ray made this port number up
 
+
+  gql_surveys:
+    image: komandosscz/surveys:latest
+    container_name: z-gql_surveys_Koza_Matejka
+    # build:
+    #   # context definuje cestu k popisu
+    #   context: .
+    environment:
+      # promenne, ktere lze cist v kontejneru
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - GQLUG_ENDPOINT_URL=http://gql_ug_hrbolek:8000/gql
+      - JWTPUBLICKEYURL=http://frontend:8000/oauth/publickey
+      - JWTRESOLVEUSERPATHURL=http://frontend:8000/oauth/userinfo
+      - DEMO=true
+    healthcheck:
+      # definice, umoznujici provest test, zda je kontejner v poradku
+      test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
+      interval: 20s
+      retries: 10
+      start_period: 20s
+      timeout: 10s
+    restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+    
+    depends_on:
+      postgres:
+        condition: service_started
+      yugabyte1:
+        condition: service_started
+      yugabyte2:
+        condition: service_started
+      yugabyte3:
+        condition: service_started
+      yugabyte-init:
+        condition: service_completed_successfully
+      # gql_forms:
+      #   condition: service_healthy
+      # gql_facilities:
+      #   condition: service_healthy
+      # gql_events:
+      #   condition: service_healthy
+      # gql_granting:
+      #   condition: service_healthy
+      # gql_lessons:
+      #   condition: service_healthy
+      # gql_projects:
+      #   condition: service_healthy
+      # gql_ug:
+      #   condition: service_healthy
+      # gql_workflow:
+      #   condition: service_healthy
+      # gql_workflows:
+      #   condition: service_healthy
+      # gql_documents:
+      #   condition: service_healthy
+      # gql_presences:
+      #   condition: service_healthy
+    
+    ports:
+      - 32122:8000  # ray made this port number up
+
+
+
+
+  gql_preferences:
+    image: haki22/gql-preferences:latest
+    container_name: z-gql_preferences_Sittek
+
+    environment:
+      # promenne, ktere lze cist v kontejneru
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - GQLUG_ENDPOINT_URL=http://gql_ug_hrbolek:8000/gql
+      - JWTPUBLICKEYURL=http://frontend:8000/oauth/publickey
+      - JWTRESOLVEUSERPATHURL=http://frontend:8000/oauth/userinfo
+      - DEMO=True
+
+    healthcheck:
+      # definice, umoznujici provest test, zda je kontejner v poradku
+      test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
+      interval: 20s
+      retries: 10
+      start_period: 20s
+      timeout: 10s
+    restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+    
+    depends_on:
+      postgres:
+        condition: service_started
+      yugabyte1:
+        condition: service_started
+      yugabyte2:
+        condition: service_started
+      yugabyte3:
+        condition: service_started
+      yugabyte-init:
+        condition: service_completed_successfully
+      # gql_forms:
+      #   condition: service_healthy
+      # gql_facilities:
+      #   condition: service_healthy
+      # gql_events:
+      #   condition: service_healthy
+      # gql_granting:
+      #   condition: service_healthy
+      # gql_lessons:
+      #   condition: service_healthy
+      # gql_projects:
+      #   condition: service_healthy
+      # gql_ug:
+      #   condition: service_healthy
+      # gql_workflow:
+      #   condition: service_healthy
+      # gql_workflows:
+      #   condition: service_healthy
+      # gql_documents:
+      #   condition: service_healthy
+      # gql_presences:
+      #   condition: service_healthy
+
+    ports:
+      - 32123:8000  # ray made this port number up
