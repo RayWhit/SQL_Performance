@@ -91,7 +91,7 @@ services:
       - yugabyte2
       - yugabyte3
     entrypoint: /bin/sh
-    command: -c "sleep 10 && /home/yugabyte/bin/ysqlsh --echo-queries --host yugabyte1 -U postgres -d postgres -c 'CREATE DATABASE data;'"
+    command: -c "sleep 20 && /home/yugabyte/bin/ysqlsh --echo-queries --host yugabyte1 -U postgres -d postgres -c 'CREATE DATABASE data;'"
 
 
 
@@ -111,7 +111,8 @@ services:
           {"name": "externalids", "url": "http://gql_externalids:8000/gql"},
           {"name": "granting", "url": "http://gql_granting:8000/gql"},
           {"name": "workflows", "url": "http://gql_workflows:8000/gql"},
-          {"name": "documents", "url": "http://gql_documents:8000/gql"}
+          {"name": "documents", "url": "http://gql_documents:8000/gql"},
+          {"name": "surveys", "url": "http://gql_surveys:8000/gql"}
         ]
       # ug has to be part of services
 
@@ -121,7 +122,8 @@ services:
       # {"name": "externalids", "url": "http://gql_externalids:8000/gql"},
       # {"name": "granting", "url": "http://gql_granting:8000/gql"},
       # {"name": "workflows", "url": "http://gql_workflows:8000/gql"},
-      # {"name": "documents", "url": "http://gql_documents:8000/gql"}
+      # {"name": "documents", "url": "http://gql_documents:8000/gql"},
+      # {"name": "surveys", "url": "http://gql_surveys:8000/gql"}
 
 
       # services
@@ -160,10 +162,24 @@ services:
       - yugabyte2
       - yugabyte3
       #- yugabyte-init
-      - gql_externalids
-      - gql_forms
+      - frontend
       - gql_events
+      - gql_externalids
+      - gql_facilities
+      - gql_forms
       - gql_granting
+      - gql_lessons
+      - gql_preferences
+      - gql_projects
+      - gql_surveys
+      - gql_ug
+      - gql_ug_hrbolek
+      - gql_workflow
+      - gql_workflows
+      - gql_documents
+      - gql_presences
+      - gql_publications_a
+      - gql_grantinga
     
 
 
@@ -204,6 +220,7 @@ services:
       start_period: 30s
       timeout: 10s
     restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+  
     depends_on:
       postgres:
         condition: service_started
@@ -215,6 +232,9 @@ services:
         condition: service_started
       yugabyte-init:
         condition: service_completed_successfully
+      frontend:
+        condition: service_started
+    
     ports:
       - 31127:8000  # ray made this port number up
   
@@ -253,6 +273,7 @@ services:
         condition: service_started
       yugabyte-init:
         condition: service_completed_successfully
+      
 
 
   gql_facilities:
@@ -273,6 +294,17 @@ services:
       - DEMO=true
       # kontejnery, ktere musi byt spusteny drive
     
+    
+    
+    healthcheck:
+      # definice, umoznujici provest test, zda je kontejner v poradku
+      test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
+      interval: 60s
+      retries: 10
+      start_period: 60s
+      timeout: 10s
+    restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+
     depends_on:
       postgres:
         condition: service_started
@@ -284,15 +316,9 @@ services:
         condition: service_started
       yugabyte-init:
         condition: service_completed_successfully
+      frontend:
+        condition: service_started
     
-    healthcheck:
-      # definice, umoznujici provest test, zda je kontejner v poradku
-      test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
-      interval: 60s
-      retries: 10
-      start_period: 60s
-      timeout: 10s
-    restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
     ports: #v deploymentu by nebylo zadne mapovani portu
     #   # vnejsi port : port, kde sluzbu poskytuje kontejner
        - 31125:8000
@@ -337,6 +363,8 @@ services:
         condition: service_started
       yugabyte-init:
         condition: service_completed_successfully
+      frontend:
+        condition: service_started
       # gql_facilities:
       #   condition: service_healthy
       # gql_facilities:
@@ -385,6 +413,8 @@ services:
         condition: service_started
       yugabyte-init:
         condition: service_completed_successfully
+      frontend:
+        condition: service_started
       # gql_forms:
       #   condition: service_healthy
       # gql_facilities:
@@ -433,6 +463,8 @@ services:
         condition: service_started
       yugabyte-init:
         condition: service_completed_successfully
+      frontend:
+        condition: service_started
       # gql_forms:
       #   condition: service_healthy
       # gql_facilities:
@@ -482,6 +514,8 @@ services:
         condition: service_started
       yugabyte-init:
         condition: service_completed_successfully
+      frontend:
+        condition: service_started
       # gql_forms:
       #   condition: service_healthy
       # gql_facilities:
@@ -531,6 +565,8 @@ services:
         condition: service_started
       yugabyte-init:
         condition: service_completed_successfully
+      frontend:
+        condition: service_started
       # gql_forms:
       #   condition: service_healthy
       # gql_facilities:
@@ -643,6 +679,8 @@ services:
         condition: service_started
       yugabyte-init:
         condition: service_completed_successfully
+      frontend:
+        condition: service_started
       # gql_forms:
       #   condition: service_healthy
       # gql_facilities:
@@ -700,6 +738,8 @@ services:
         condition: service_started
       yugabyte-init:
         condition: service_completed_successfully
+      frontend:
+        condition: service_started
       # gql_forms:
       #   condition: service_healthy
       # gql_facilities:
@@ -757,6 +797,8 @@ services:
         condition: service_started
       yugabyte-init:
         condition: service_completed_successfully
+      frontend:
+        condition: service_started
       # gql_forms:
       #   condition: service_healthy
       # gql_facilities:
@@ -783,7 +825,7 @@ services:
 
 
   gql_presences:
-    image: davidnemecek4227/gql_presences:latest
+    image: davidnemecek4227/gql_presences:main
     container_name: z-gql_presences_Nemecek
     # build:
     #   # context definuje cestu k popisu
@@ -818,6 +860,8 @@ services:
         condition: service_started
       yugabyte-init:
         condition: service_completed_successfully
+      frontend:
+        condition: service_started
       # gql_forms:
       #   condition: service_healthy
       # gql_facilities:
@@ -880,6 +924,8 @@ services:
         condition: service_started
       yugabyte-init:
         condition: service_completed_successfully
+      frontend:
+        condition: service_started
       # gql_forms:
       #   condition: service_healthy
       # gql_facilities:
@@ -924,7 +970,7 @@ services:
       - GQLUG_ENDPOINT_URL=http://gql_ug_hrbolek:8000/gql
       - JWTPUBLICKEYURL=http://frontend:8000/oauth/publickey
       - JWTRESOLVEUSERPATHURL=http://frontend:8000/oauth/userinfo
-      - DEMO=true
+      - DEMO=True
     healthcheck:
       # definice, umoznujici provest test, zda je kontejner v poradku
       test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
@@ -945,6 +991,8 @@ services:
         condition: service_started
       yugabyte-init:
         condition: service_completed_successfully
+      frontend:
+        condition: service_started
       # gql_forms:
       #   condition: service_healthy
       # gql_facilities:
@@ -1008,6 +1056,8 @@ services:
         condition: service_started
       yugabyte-init:
         condition: service_completed_successfully
+      frontend:
+        condition: service_started
       # gql_forms:
       #   condition: service_healthy
       # gql_facilities:
@@ -1072,6 +1122,8 @@ services:
         condition: service_started
       yugabyte-init:
         condition: service_completed_successfully
+      frontend:
+        condition: service_started
       # gql_forms:
       #   condition: service_healthy
       # gql_facilities:
