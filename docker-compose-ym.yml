@@ -17,7 +17,6 @@ services:
           {"name": "granting", "url": "http://gql_granting:8000/gql"},
           {"name": "projects", "url": "http://gql_projects:8000/gql"}
         ]
-      # ug has to be part of services
 
     healthcheck:
       # definice, umoznujici provest test, zda je kontejner v poradku (vsimnete si portu a srovnejte s portem v environment)
@@ -26,7 +25,6 @@ services:
       start_period: 60s
       timeout: 10s
     restart: on-failure:3 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
-
     depends_on:
       - gql_events
       - gql_ug
@@ -55,7 +53,7 @@ services:
 
   ########## UG ##########
   yugabyte-ug1:
-    image: yugabytedb/yugabyte:2.19.3.0-b140
+    image: yugabytedb/yugabyte:2.20.1.3-b3
     container_name: yugabyte1-ug
     ports:
       - "7000:7000"
@@ -66,7 +64,7 @@ services:
     command: ["bin/yugabyted", "start", "--daemon=false"]
 
   yugabyte-ug2:
-    image: yugabytedb/yugabyte:2.19.3.0-b140
+    image: yugabytedb/yugabyte:2.20.1.3-b3
     container_name: yugabyte2-ug
     command: ["bin/yugabyted", "start", "--daemon=false", "--join=yugabyte-ug1"]
     depends_on:
@@ -74,7 +72,7 @@ services:
     restart: on-failure:10
 
   yugabyte-ug3:
-    image: yugabytedb/yugabyte:2.19.3.0-b140
+    image: yugabytedb/yugabyte:2.20.1.3-b3
     container_name: yugabyte3-ug
     command: ["bin/yugabyted", "start", "--daemon=false", "--join=yugabyte-ug2"]
     depends_on:
@@ -83,7 +81,7 @@ services:
 
   # creates database "data" after yugabyte nodes start
   yugabyte-ug-init:
-    image: yugabytedb/yugabyte:2.19.3.0-b140
+    image: yugabytedb/yugabyte:2.20.1.3-b3
     container_name: yugabyte-ug-init
     depends_on:
       - yugabyte-ug1
@@ -123,7 +121,6 @@ services:
         condition: service_started
       yugabyte-ug-init:
         condition: service_completed_successfully
-
     ports: #v deploymentu by nebylo zadne mapovani portu
       - 31120:8000
   
@@ -131,7 +128,7 @@ services:
   ########## EVENTS ##########
 
   yugabyte-events1:
-    image: yugabytedb/yugabyte:2.19.3.0-b140
+    image: yugabytedb/yugabyte:2.20.1.3-b3
     container_name: yugabyte-events1
     ports:
       - "7001:7000"
@@ -142,7 +139,7 @@ services:
     command: ["bin/yugabyted", "start", "--daemon=false"]
 
   yugabyte-events2:
-    image: yugabytedb/yugabyte:2.19.3.0-b140
+    image: yugabytedb/yugabyte:2.20.1.3-b3
     container_name: yugabyte-events2
     command: ["bin/yugabyted", "start", "--daemon=false", "--join=yugabyte-events1"]
     depends_on:
@@ -150,7 +147,7 @@ services:
     restart: on-failure:10
 
   yugabyte-events3:
-    image: yugabytedb/yugabyte:2.19.3.0-b140
+    image: yugabytedb/yugabyte:2.20.1.3-b3
     container_name: yugabyte-events3
     command: ["bin/yugabyted", "start", "--daemon=false", "--join=yugabyte-events1"]
     depends_on:
@@ -159,7 +156,7 @@ services:
 
   # creates database "data" after yugabyte nodes start
   yugabyte-events-init:
-    image: yugabytedb/yugabyte:2.19.3.0-b140
+    image: yugabytedb/yugabyte:2.20.1.3-b3
     container_name: yugabyte-events-init
     depends_on:
       - yugabyte-events1
@@ -199,7 +196,6 @@ services:
         condition: service_started
       yugabyte-events-init:
         condition: service_completed_successfully
-
     ports:
       - 31126:8000  # ray made up this port number
   
@@ -207,7 +203,7 @@ services:
   ########## EXTERNAL IDs ##########
 
   yugabyte-projects1:
-    image: yugabytedb/yugabyte:2.19.3.0-b140
+    image: yugabytedb/yugabyte:2.20.1.3-b3
     container_name: yugabyte-projects1
     ports:
       - "7002:7000"
@@ -218,7 +214,7 @@ services:
     command: ["bin/yugabyted", "start", "--daemon=false"]
 
   yugabyte-projects2:
-    image: yugabytedb/yugabyte:2.19.3.0-b140
+    image: yugabytedb/yugabyte:2.20.1.3-b3
     container_name: yugabyte-projects2
     command: ["bin/yugabyted", "start", "--daemon=false", "--join=yugabyte-projects1"]
     depends_on:
@@ -226,7 +222,7 @@ services:
     restart: on-failure:10
 
   yugabyte-projects3:
-    image: yugabytedb/yugabyte:2.19.3.0-b140
+    image: yugabytedb/yugabyte:2.20.1.3-b3
     container_name: yugabyte-projects3
     command: ["bin/yugabyted", "start", "--daemon=false", "--join=yugabyte-projects1"]
     depends_on:
@@ -235,7 +231,7 @@ services:
 
   # creates database "data" after yugabyte nodes start
   yugabyte-projects-init:
-    image: yugabytedb/yugabyte:2.19.3.0-b140
+    image: yugabytedb/yugabyte:2.20.1.3-b3
     container_name: yugabyte-projects-init
     depends_on:
       - yugabyte-projects1
@@ -266,7 +262,7 @@ services:
       start_period: 20s
       timeout: 10s
     restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
-    
+
     depends_on:
       yugabyte-projects1:
         condition: service_started
@@ -276,7 +272,6 @@ services:
         condition: service_started
       yugabyte-projects-init:
         condition: service_completed_successfully
-    
     ports:
       - 32801:8000 # ray made up this port number
 
@@ -284,7 +279,7 @@ services:
   ########## GRANTING ##########
 
   yugabyte-granting1:
-    image: yugabytedb/yugabyte:2.19.3.0-b140
+    image: yugabytedb/yugabyte:2.20.1.3-b3
     container_name: yugabyte-granting1
     ports:
       - "7003:7000"
@@ -295,7 +290,7 @@ services:
     command: ["bin/yugabyted", "start", "--daemon=false"]
 
   yugabyte-granting2:
-    image: yugabytedb/yugabyte:2.19.3.0-b140
+    image: yugabytedb/yugabyte:2.20.1.3-b3
     container_name: yugabyte-granting2
     command: ["bin/yugabyted", "start", "--daemon=false", "--join=yugabyte-granting1"]
     depends_on:
@@ -303,7 +298,7 @@ services:
     restart: on-failure:10
 
   yugabyte-granting3:
-    image: yugabytedb/yugabyte:2.19.3.0-b140
+    image: yugabytedb/yugabyte:2.20.1.3-b3
     container_name: yugabyte-granting3
     command: ["bin/yugabyted", "start", "--daemon=false", "--join=yugabyte-granting1"]
     depends_on:
@@ -312,7 +307,7 @@ services:
 
   # creates database "data" after yugabyte nodes start
   yugabyte-granting-init:
-    image: yugabytedb/yugabyte:2.19.3.0-b140
+    image: yugabytedb/yugabyte:2.20.1.3-b3
     container_name: yugabyte-granting-init
     depends_on:
       - yugabyte-granting1
@@ -354,6 +349,5 @@ services:
         condition: service_started
       yugabyte-granting-init:
         condition: service_completed_successfully
-    
     ports: #v deploymentu by nebylo zadne mapovani portu
        - 31125:8000
