@@ -1,12 +1,6 @@
 version: '3.8'
 
-volumes:
-  yb-master-data-1:
-  yb-tserver-data-1:
-
 services:
-
-  ########### pgadmin ################
   pgadmin:
     container_name: pgadmin4
     image: "dpage/pgadmin4:7.8"
@@ -17,69 +11,1048 @@ services:
     ports:
       - "5050:80"
 
-
-  # ############## yugabyte ######################
-  # yugabyte:
-  #   image: yugabytedb/yugabyte:2.19.3.0-b140
-  #   container_name: yugabyte
-  #   ports:
-  #     - "7000:7000"
-  #     - "9000:9000"
-  #     - "15433:15433"
-  #     - "5433:5433"
-  #     - "9042:9042"
+  ############## yugabyte ######################
+  yugabyte1:
+    image: yugabytedb/yugabyte:2.20.1.3-b3
+    container_name: yugabyte1
+    ports:
+      - "7000:7000"
+      - "9001:9000"   # rebind because of portainer
+      - "15433:15433" # cluster GUI
+      - "5433:5433"
+      - "9042:9042"
     
-  #   command: bin/yugabyted start --base_dir=/home/yugabyte/yb_data --daemon=false
-  
-  
-  
-  
-  yb-master:
-    image: yugabytedb/yugabyte:2.19.2.0-b121
-    restart: unless-stopped
-    container_name: yb-master-n1
-    volumes:
-    - yb-master-data-1:/mnt/master
-    command: [ "/home/yugabyte/bin/yb-master",
-              "--fs_data_dirs=/mnt/master",
-              "--master_addresses=yb-master-n1:7100",
-              "--rpc_bind_addresses=yb-master-n1:7100",
-              "--replication_factor=1"]
-    ports:
-    - "7000:7000"
-    environment:
-      SERVICE_7000_NAME: yb-master
+    command: ["bin/yugabyted", "start", "--daemon=false"]
 
-  yb-tserver:
-    image: yugabytedb/yugabyte:2.19.2.0-b121
-    restart: unless-stopped
-    container_name: yb-tserver-n1
-    volumes:
-    - yb-tserver-data-1:/mnt/tserver
-    command: [ "/home/yugabyte/bin/yb-tserver",
-              "--fs_data_dirs=/mnt/tserver",
-              "--start_pgsql_proxy",
-              "--rpc_bind_addresses=yb-tserver-n1:9100",
-              "--tserver_master_addrs=yb-master-n1:7100"
-              ]
-    ports:
-    - "9042:9042"
-    - "5433:5433"
-    - "9001:9000" # rebind because of portainer
-    - "15433:15433"
-    environment:
-      SERVICE_5433_NAME: ysql
-      SERVICE_9042_NAME: ycql
-      SERVICE_6379_NAME: yedis
-      SERVICE_9000_NAME: yb-tserver
-      POSTGRES_DB: data
-    depends_on:
-    - yb-master
 
-  yb-client:
-    image: yugabytedb/yb-sample-apps:1.3.9
-    restart: unless-stopped
-    container_name: yb-client-n1
-    command: [ "--workload", "SqlInserts", "--nodes", "yb-tserver-n1:5433" ]
+  yugabyte2:
+    image: yugabytedb/yugabyte:2.20.1.3-b3
+    container_name: yugabyte2    
+    command: ["bin/yugabyted", "start", "--daemon=false", "--join=yugabyte1"]
     depends_on:
-    - yb-tserver
+      - yugabyte1
+    restart: on-failure:10
+
+
+  yugabyte3:
+    image: yugabytedb/yugabyte:2.20.1.3-b3
+    container_name: yugabyte3
+    command: ["bin/yugabyted", "start", "--daemon=false", "--join=yugabyte1"]
+    depends_on:
+      - yugabyte1
+    restart: on-failure:10
+
+
+  # creates database "data" after yugabyte nodes start
+  yugabyte-init:
+    image: yugabytedb/yugabyte:2.20.1.3-b3
+    container_name: yugabyte-init
+    depends_on:
+      - yugabyte1
+      - yugabyte2
+      - yugabyte3
+    entrypoint: /bin/sh
+    command: -c "sleep 20 && /home/yugabyte/bin/ysqlsh --echo-queries --host yugabyte1 -U postgres -d postgres -c 'CREATE DATABASE data;'"
+
+
+
+############# apollo #######################
+  apollo:
+    image: hrbolek/apollo_federation:latest
+    container_name: apollo
+    environment:
+      # promenne, ktere lze cist v kontejneru
+      - PORT=3000
+      - |
+        SERVICES=
+        [
+          {"name": "ug", "url": "http://gql_ug:8000/gql"},
+          {"name": "forms", "url": "http://gql_forms:8000/gql"},
+          {"name": "events", "url": "http://gql_events:8000/gql"},
+          {"name": "granting", "url": "http://gql_granting:8000/gql"},
+          {"name": "projects", "url": "http://gql_projects:8000/gql"},
+          {"name": "workflow", "url": "http://gql_workflow:8000/gql"},
+          {"name": "workflows", "url": "http://gql_workflows:8000/gql"},
+          {"name": "documents", "url": "http://gql_documents:8000/gql"},
+          {"name": "presences", "url": "http://gql_presences:8000/gql"},
+          {"name": "surveys", "url": "http://gql_surveys:8000/gql"}
+        ]
+      # ug has to be part of services
+
+      # services
+      # {"name": "ug", "url": "http://gql_ug_hrbolek:8000/gql"},
+      # {"name": "ug", "url": "http://gql_ug:8000/gql"},
+      # {"name": "forms", "url": "http://gql_forms:8000/gql"},
+      # {"name": "facilities", "url": "http://gql_facilities:8000/gql"},
+      # {"name": "events", "url": "http://gql_events:8000/gql"},
+      # {"name": "externalids", "url": "http://gql_externalids:8000/gql"},
+      # {"name": "granting", "url": "http://gql_granting:8000/gql"},
+      # {"name": "lessons", "url": "http://gql_lessons:8000/gql"},
+      # {"name": "projects", "url": "http://gql_projects:8000/gql/"},
+      # {"name": "workflow", "url": "http://gql_workflow:8000/gql"},
+      # {"name": "workflows", "url": "http://gql_workflows:8000/gql"},
+      # {"name": "documents", "url": "http://gql_documents:8000/gql"},
+      # {"name": "presences", "url": "http://gql_presences:8000/gql"},
+      # {"name": "publications_a", "url": "http://gql_publications_a:8000/gql"},
+      # {"name": "grantinga", "url": "http://gql_grantinga:8000/gql"},
+      # {"name": "preferences", "url": "http://gql_preferences:8000/gql"},
+      # {"name": "surveys", "url": "http://gql_surveys:8000/gql"}
+
+    healthcheck:
+      # definice, umoznujici provest test, zda je kontejner v poradku (vsimnete si portu a srovnejte s portem v environment)
+      interval: 60s
+      retries: 3
+      start_period: 60s
+      timeout: 10s
+    restart: on-failure:3 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+
+    depends_on:
+      - yugabyte1
+      - yugabyte2
+      - yugabyte3
+      #- yugabyte-init
+      - gql_events
+      - gql_externalids
+      - gql_facilities
+      - gql_forms
+      - gql_granting
+      - gql_lessons
+      - gql_preferences
+      - gql_projects
+      - gql_surveys
+      - gql_ug
+      # - gql_ug_hrbolek
+      - gql_workflow
+      - gql_workflows
+      - gql_documents
+      - gql_presences
+      - gql_publications_a
+      - gql_grantinga
+    
+    ports: #v deploymentu by nebylo zadne mapovani portu
+    #   # vnejsi port : port, kde sluzbu poskytuje kontejner
+      - 33000:3000
+
+
+
+######################## frontend ##############################
+  frontend:
+    image: hrbolek/frontend
+    container_name: frontend
+    environment:
+      - DEMO=False
+      - GQL_PROXY=http://apollo:3000/api/gql/
+      - SALT=fe1c71b2-74c0-41e5-978f-eecbffac7418    # copied from github.com/hrbolek/_uois
+    ports:
+      - 33080:8000
+    depends_on:
+      apollo:
+        condition: service_started
+
+
+######################## student containers ##############################
+  
+  # gql_ug_hrbolek:
+  #   image: hrbolek/gql_ug:latest
+  #   container_name: z-gql_ug_Hrbolek
+  #   environment:
+  #     - POSTGRES_USER=yugabyte
+  #     - POSTGRES_PASSWORD=yugabyte
+  #     - POSTGRES_HOST=yugabyte1:5433
+  #     - POSTGRES_DB=data
+  #     - GQLUG_ENDPOINT_URL=http://gql_ug_hrbolek:8000/gql
+  #     - JWTPUBLICKEYURL=http://frontend:8000/oauth/publickey
+  #     - JWTRESOLVEUSERPATHURL=http://frontend:8000/oauth/userinfo
+  #     - DEMO=True
+  #   healthcheck:
+  #     # definice, umoznujici provest test, zda je kontejner v poradku
+  #     test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql || exit 1"
+  #     interval: 30s
+  #     retries: 10
+  #     start_period: 30s
+  #     timeout: 10s
+  #   restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+    
+  #   depends_on:
+  #     yugabyte1:
+  #       condition: service_started
+  #     yugabyte2:
+  #       condition: service_started
+  #     yugabyte3:
+  #       condition: service_started
+  #     yugabyte-init:
+  #       condition: service_completed_successfully
+  #     frontend:
+  #       condition: service_started
+
+  
+
+  gql_ug:
+    image: kavic/ug:latest
+    container_name: z-gql_ug_Holik-Kava
+    environment:
+      # promenne, ktere lze cist v kontejneru
+      - POSTGRES_USER=yugabyte
+      - POSTGRES_PASSWORD=yugabyte
+      - POSTGRES_HOST=yugabyte1:5433
+      - POSTGRES_DB=data
+      - GQLUG_ENDPOINT_URL=http://gql_ug:8000/gql
+      - JWTPUBLICKEYURL=http://frontend:8000/oauth/publickey
+      - JWTRESOLVEUSERPATHURL=http://frontend:8000/oauth/userinfo
+      - DEMO=True
+    healthcheck:
+      # definice, umoznujici provest test, zda je kontejner v poradku
+      test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
+      interval: 20s
+      retries: 10
+      start_period: 20s
+      timeout: 10s
+    restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+
+    depends_on:
+      yugabyte1:
+        condition: service_started
+      yugabyte2:
+        condition: service_started
+      yugabyte3:
+        condition: service_started
+      yugabyte-init:
+        condition: service_completed_successfully
+
+    ports: #v deploymentu by nebylo zadne mapovani portu
+    #   # vnejsi port : port, kde sluzbu poskytuje kontejner
+      - 31120:8000
+  
+  
+
+  gql_events:
+    image: nafreju2/gql_events:latest
+    container_name: z-gql_events_Bures-Sedlackova
+    environment:
+      # promenne, ktere lze cist v kontejneru
+      - POSTGRES_USER=yugabyte
+      - POSTGRES_PASSWORD=yugabyte
+      - POSTGRES_HOST=yugabyte1:5433
+      - POSTGRES_DB=data
+      - GQLUG_ENDPOINT_URL=http://gql_ug:8000/gql
+      - JWTPUBLICKEYURL=http://frontend:8000/oauth/publickey
+      - JWTRESOLVEUSERPATHURL=http://frontend:8000/oauth/userinfo
+      - DEMO=true
+    healthcheck:
+      # definice, umoznujici provest test, zda je kontejner v poradku
+      test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
+      interval: 20s
+      retries: 10
+      start_period: 20s
+      timeout: 10s
+    restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+    
+    depends_on:
+      yugabyte1:
+        condition: service_started
+      yugabyte2:
+        condition: service_started
+      yugabyte3:
+        condition: service_started
+      yugabyte-init:
+        condition: service_completed_successfully
+      gql_ug:
+        condition: service_started
+      # gql_ug_hrbolek:
+      #   condition: service_started
+
+    ports:
+      - 31126:8000  # ray made up this port number
+  
+
+
+  gql_externalids:
+    image: gjia/gql_externalids:main
+    container_name: z-gql_externalids_Quach-Nguyen
+    environment:
+      # promenne, ktere lze cist v kontejneru
+      - POSTGRES_USER=yugabyte
+      - POSTGRES_PASSWORD=yugabyte
+      - POSTGRES_HOST=yugabyte1:5433
+      - POSTGRES_DB=data
+      - GQLUG_ENDPOINT_URL=http://gql_ug:8000/gql
+      - JWTPUBLICKEYURL=http://frontend:8000/oauth/publickey
+      - JWTRESOLVEUSERPATHURL=http://frontend:8000/oauth/userinfo
+      - DEMO=true
+    healthcheck:
+      # definice, umoznujici provest test, zda je kontejner v poradku
+      test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
+      interval: 20s
+      retries: 10
+      start_period: 20s
+      timeout: 10s
+    restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+    
+    depends_on:
+      yugabyte1:
+        condition: service_started
+      yugabyte2:
+        condition: service_started
+      yugabyte3:
+        condition: service_started
+      yugabyte-init:
+        condition: service_completed_successfully
+      gql_ug:
+        condition: service_started
+      # gql_ug_hrbolek:
+      #   condition: service_started
+      gql_events:
+        condition: service_started
+    
+    ports:
+      - 32801:8000 # ray made up this port number
+
+
+
+  gql_facilities:
+    image: vitekr/gql_facilities:latest
+    container_name: z-gql_facilities_Rout-Stacha
+    environment:
+      # promenne, ktere lze cist v kontejneru
+      - POSTGRES_USER=yugabyte
+      - POSTGRES_PASSWORD=yugabyte
+      - POSTGRES_HOST=yugabyte1:5433
+      - POSTGRES_DB=data
+      - GQLUG_ENDPOINT_URL=http://gql_ug:8000/gql
+      - JWTPUBLICKEYURL=http://frontend:8000/oauth/publickey
+      - JWTRESOLVEUSERPATHURL=http://frontend:8000/oauth/userinfo
+      - DEMO=True
+    healthcheck:
+      # definice, umoznujici provest test, zda je kontejner v poradku
+      test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
+      interval: 60s
+      retries: 10
+      start_period: 60s
+      timeout: 10s
+    restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+
+    depends_on:
+      yugabyte1:
+        condition: service_started
+      yugabyte2:
+        condition: service_started
+      yugabyte3:
+        condition: service_started
+      yugabyte-init:
+        condition: service_completed_successfully
+      gql_ug:
+        condition: service_started
+      # gql_ug_hrbolek:
+      #   condition: service_started
+      gql_events:
+        condition: service_started
+      gql_externalids:
+        condition: service_started
+    
+    ports: #v deploymentu by nebylo zadne mapovani portu
+    #   # vnejsi port : port, kde sluzbu poskytuje kontejner
+       - 31125:8000
+
+  
+
+  gql_forms:
+    image: hrbolek/gql_forms:latest
+    container_name: z-gql_forms_Hrbolek
+    environment:
+      # promenne, ktere lze cist v kontejneru
+      - POSTGRES_USER=yugabyte
+      - POSTGRES_PASSWORD=yugabyte
+      - POSTGRES_HOST=yugabyte1:5433
+      - POSTGRES_DB=data
+      - GQLUG_ENDPOINT_URL=http://gql_ug:8000/gql
+      - JWTPUBLICKEYURL=http://frontend:8000/oauth/publickey
+      - JWTRESOLVEUSERPATHURL=http://frontend:8000/oauth/userinfo
+      - DEMO=True
+    healthcheck:
+      # definice, umoznujici provest test, zda je kontejner v poradku
+      test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
+      interval: 30s
+      retries: 10
+      start_period: 30s
+      timeout: 10s
+    restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+  
+    depends_on:
+      yugabyte1:
+        condition: service_started
+      yugabyte2:
+        condition: service_started
+      yugabyte3:
+        condition: service_started
+      yugabyte-init:
+        condition: service_completed_successfully
+      gql_ug:
+        condition: service_started
+      # gql_ug_hrbolek:
+      #   condition: service_started
+      gql_events:
+        condition: service_started
+      gql_externalids:
+        condition: service_started
+      gql_facilities:
+        condition: service_started
+    
+    ports:
+      - 31127:8000  # ray made this port number up
+
+
+  gql_granting:
+    image: oklement/gql_granting:latest
+    container_name: z-gql_granting_Klement-Novotny-Wala
+    environment:
+      # promenne, ktere lze cist v kontejneru
+      - POSTGRES_USER=yugabyte
+      - POSTGRES_PASSWORD=yugabyte
+      - POSTGRES_HOST=yugabyte1:5433
+      - POSTGRES_DB=data
+      - GQLUG_ENDPOINT_URL=http://gql_ug:8000/gql
+      - JWTPUBLICKEYURL=http://frontend:8000/oauth/publickey
+      - JWTRESOLVEUSERPATHURL=http://frontend:8000/oauth/userinfo
+      - DEMO=True
+    healthcheck:
+      # definice, umoznujici provest test, zda je kontejner v poradku
+      test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
+      interval: 20s
+      retries: 10
+      start_period: 20s
+      timeout: 10s
+    restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+    
+    depends_on:
+      yugabyte1:
+        condition: service_started
+      yugabyte2:
+        condition: service_started
+      yugabyte3:
+        condition: service_started
+      yugabyte-init:
+        condition: service_completed_successfully
+      gql_ug:
+        condition: service_started
+      # gql_ug_hrbolek:
+      #   condition: service_started
+      gql_events:
+        condition: service_started
+      gql_externalids:
+        condition: service_started
+      gql_facilities:
+        condition: service_started
+      gql_forms:
+        condition: service_started
+    
+    ports:
+      - 32811:8000 # ray made up this port number
+
+
+
+
+  gql_lessons:
+    image: luknowo/gql_lessons:latest
+    container_name: z-gql_lessons_Novotny-Veverka
+    environment:
+      # promenne, ktere lze cist v kontejneru
+      - POSTGRES_USER=yugabyte
+      - POSTGRES_PASSWORD=yugabyte
+      - POSTGRES_HOST=yugabyte1:5433
+      - POSTGRES_DB=data
+      - GQLUG_ENDPOINT_URL=http://gql_ug:8000/gql
+      - JWTPUBLICKEYURL=http://frontend:8000/oauth/publickey
+      - JWTRESOLVEUSERPATHURL=http://frontend:8000/oauth/userinfo
+      - DEMO=true
+    healthcheck:
+      # definice, umoznujici provest test, zda je kontejner v poradku
+      test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
+      interval: 20s
+      retries: 10
+      start_period: 20s
+      timeout: 10s
+    restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+    
+    depends_on:
+      yugabyte1:
+        condition: service_started
+      yugabyte2:
+        condition: service_started
+      yugabyte3:
+        condition: service_started
+      yugabyte-init:
+        condition: service_completed_successfully
+      gql_ug:
+        condition: service_started
+      # gql_ug_hrbolek:
+      #   condition: service_started
+      gql_events:
+        condition: service_started
+      gql_externalids:
+        condition: service_started
+      gql_facilities:
+        condition: service_started
+      gql_forms:
+        condition: service_started
+      gql_granting:
+        condition: service_started
+
+    ports:
+      - 31124:8000 # ray made up this port number
+
+
+
+  gql_preferences:
+    image: haki22/gql-preferences:latest
+    container_name: z-gql_preferences_Sittek
+    environment:
+      # promenne, ktere lze cist v kontejneru
+      - POSTGRES_USER=yugabyte
+      - POSTGRES_PASSWORD=yugabyte
+      - POSTGRES_HOST=yugabyte1:5433
+      - POSTGRES_DB=data
+      - GQLUG_ENDPOINT_URL=http://gql_ug:8000/gql
+      - JWTPUBLICKEYURL=http://frontend:8000/oauth/publickey
+      - JWTRESOLVEUSERPATHURL=http://frontend:8000/oauth/userinfo
+      - DEMO=True
+    healthcheck:
+      # definice, umoznujici provest test, zda je kontejner v poradku
+      test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
+      interval: 20s
+      retries: 10
+      start_period: 20s
+      timeout: 10s
+    restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+    
+    depends_on:
+      yugabyte1:
+        condition: service_started
+      yugabyte2:
+        condition: service_started
+      yugabyte3:
+        condition: service_started
+      yugabyte-init:
+        condition: service_completed_successfully
+      gql_ug:
+        condition: service_started
+      # gql_ug_hrbolek:
+      #   condition: service_started
+      gql_events:
+        condition: service_started
+      gql_externalids:
+        condition: service_started
+      gql_facilities:
+        condition: service_started
+      gql_forms:
+        condition: service_started
+      gql_granting:
+        condition: service_started
+      gql_lessons:
+        condition: service_started
+
+    ports:
+      - 32123:8000  # ray made this port number up
+
+
+
+  gql_projects:
+    image: frajxd/gql_projects:latest
+    container_name: z-gql_projects_Smid-Spanik
+    environment:
+      # promenne, ktere lze cist v kontejneru
+      - POSTGRES_USER=yugabyte
+      - POSTGRES_PASSWORD=yugabyte
+      - POSTGRES_HOST=yugabyte1:5433
+      - POSTGRES_DB=data
+      - GQLUG_ENDPOINT_URL=http://gql_ug:8000/gql
+      - JWTPUBLICKEYURL=http://frontend:8000/oauth/publickey
+      - JWTRESOLVEUSERPATHURL=http://frontend:8000/oauth/userinfo
+      - DEMO=True
+    healthcheck:
+      # definice, umoznujici provest test, zda je kontejner v poradku
+      test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
+      interval: 20s
+      retries: 10
+      start_period: 20s
+      timeout: 10s
+    restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+    
+    depends_on:
+      yugabyte1:
+        condition: service_started
+      yugabyte2:
+        condition: service_started
+      yugabyte3:
+        condition: service_started
+      yugabyte-init:
+        condition: service_completed_successfully
+      gql_ug:
+        condition: service_started
+      # gql_ug_hrbolek:
+      #   condition: service_started
+      gql_events:
+        condition: service_started
+      gql_externalids:
+        condition: service_started
+      gql_facilities:
+        condition: service_started
+      gql_forms:
+        condition: service_started
+      gql_granting:
+        condition: service_started
+      gql_lessons:
+        condition: service_started
+      gql_preferences:
+        condition: service_started
+
+    ports:
+      - 32800:8000
+
+
+
+  gql_surveys:
+    image: komandosscz/surveys:latest
+    container_name: z-gql_surveys_Koza_Matejka
+    environment:
+      # promenne, ktere lze cist v kontejneru
+      - POSTGRES_USER=yugabyte
+      - POSTGRES_PASSWORD=yugabyte
+      - POSTGRES_HOST=yugabyte1:5433
+      - POSTGRES_DB=data
+      - GQLUG_ENDPOINT_URL=http://gql_ug:8000/gql
+      - JWTPUBLICKEYURL=http://frontend:8000/oauth/publickey
+      - JWTRESOLVEUSERPATHURL=http://frontend:8000/oauth/userinfo
+      - DEMO=true
+    healthcheck:
+      # definice, umoznujici provest test, zda je kontejner v poradku
+      test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
+      interval: 20s
+      retries: 10
+      start_period: 20s
+      timeout: 10s
+    restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+    
+    depends_on:
+      yugabyte1:
+        condition: service_started
+      yugabyte2:
+        condition: service_started
+      yugabyte3:
+        condition: service_started
+      yugabyte-init:
+        condition: service_completed_successfully
+      gql_ug:
+        condition: service_started
+      # gql_ug_hrbolek:
+      #   condition: service_started
+      gql_events:
+        condition: service_started
+      gql_externalids:
+        condition: service_started
+      gql_facilities:
+        condition: service_started
+      gql_forms:
+        condition: service_started
+      gql_granting:
+        condition: service_started
+      gql_lessons:
+        condition: service_started
+      gql_preferences:
+        condition: service_started
+      gql_projects:
+        condition: service_started
+    
+    ports:
+      - 32122:8000  # ray made this port number up
+
+
+
+  gql_workflow:
+    image: taido028/gql_workflow:latest
+    container_name: z-gql_workflow_Bui-Do
+    environment:
+      # promenne, ktere lze cist v kontejneru
+      - POSTGRES_USER=yugabyte
+      - POSTGRES_PASSWORD=yugabyte
+      - POSTGRES_HOST=yugabyte1:5433
+      - POSTGRES_DB=data
+      - GQLUG_ENDPOINT_URL=http://gql_ug:8000/gql
+      - JWTPUBLICKEYURL=http://frontend:8000/oauth/publickey
+      - JWTRESOLVEUSERPATHURL=http://frontend:8000/oauth/userinfo
+      - DEMO=true
+    healthcheck:
+      # definice, umoznujici provest test, zda je kontejner v poradku
+      test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
+      interval: 20s
+      retries: 10
+      start_period: 20s
+      timeout: 10s
+    restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+    
+    depends_on:
+      yugabyte1:
+        condition: service_started
+      yugabyte2:
+        condition: service_started
+      yugabyte3:
+        condition: service_started
+      yugabyte-init:
+        condition: service_completed_successfully
+      gql_ug:
+        condition: service_started
+      # gql_ug_hrbolek:
+      #   condition: service_started
+      gql_events:
+        condition: service_started
+      gql_externalids:
+        condition: service_started
+      gql_facilities:
+        condition: service_started
+      gql_forms:
+        condition: service_started
+      gql_granting:
+        condition: service_started
+      gql_lessons:
+        condition: service_started
+      gql_preferences:
+        condition: service_started
+      gql_projects:
+        condition: service_started
+      gql_surveys:
+        condition: service_started
+
+    ports:
+      - 31123:8000
+
+
+
+
+  gql_workflows:
+    image: angell1337/gql_workflows:latest
+    container_name: z-gql_workflows_Krivohlavek-Samolej
+    environment:
+      # promenne, ktere lze cist v kontejneru
+      - POSTGRES_USER=yugabyte
+      - POSTGRES_PASSWORD=yugabyte
+      - POSTGRES_HOST=yugabyte1:5433
+      - POSTGRES_DB=data
+      - GQLUG_ENDPOINT_URL=http://gql_ug:8000/gql
+      - JWTPUBLICKEYURL=http://frontend:8000/oauth/publickey
+      - JWTRESOLVEUSERPATHURL=http://frontend:8000/oauth/userinfo
+      - DEMO=True
+    healthcheck:
+      # definice, umoznujici provest test, zda je kontejner v poradku
+      test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
+      interval: 20s
+      retries: 10
+      start_period: 20s
+      timeout: 10s
+    restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+    
+    depends_on:
+      yugabyte1:
+        condition: service_started
+      yugabyte2:
+        condition: service_started
+      yugabyte3:
+        condition: service_started
+      yugabyte-init:
+        condition: service_completed_successfully
+      gql_ug:
+        condition: service_started
+      # gql_ug_hrbolek:
+      #   condition: service_started
+      gql_events:
+        condition: service_started
+      gql_externalids:
+        condition: service_started
+      gql_facilities:
+        condition: service_started
+      gql_forms:
+        condition: service_started
+      gql_granting:
+        condition: service_started
+      gql_lessons:
+        condition: service_started
+      gql_preferences:
+        condition: service_started
+      gql_projects:
+        condition: service_started
+      gql_surveys:
+        condition: service_started
+      gql_workflow:
+        condition: service_started
+    
+    ports:
+      - 31133:8000  # ray made up this port number
+
+
+
+
+  gql_documents:
+    image: tadblack/gql_documents:latest
+    container_name: z-gql_documents_Masek-Paldus
+    environment:
+      # promenne, ktere lze cist v kontejneru
+      - POSTGRES_USER=yugabyte
+      - POSTGRES_PASSWORD=yugabyte
+      - POSTGRES_HOST=yugabyte1:5433
+      - POSTGRES_DB=data
+      - GQLUG_ENDPOINT_URL=http://gql_ug:8000/gql
+      - JWTPUBLICKEYURL=http://frontend:8000/oauth/publickey
+      - JWTRESOLVEUSERPATHURL=http://frontend:8000/oauth/userinfo
+      - DEMO=true
+    healthcheck:
+      # definice, umoznujici provest test, zda je kontejner v poradku
+      test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
+      interval: 20s
+      retries: 10
+      start_period: 20s
+      timeout: 10s
+    restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+    
+    depends_on:
+      yugabyte1:
+        condition: service_started
+      yugabyte2:
+        condition: service_started
+      yugabyte3:
+        condition: service_started
+      yugabyte-init:
+        condition: service_completed_successfully
+      gql_ug:
+        condition: service_started
+      # gql_ug_hrbolek:
+      #   condition: service_started
+      gql_events:
+        condition: service_started
+      gql_externalids:
+        condition: service_started
+      gql_facilities:
+        condition: service_started
+      gql_forms:
+        condition: service_started
+      gql_granting:
+        condition: service_started
+      gql_lessons:
+        condition: service_started
+      gql_preferences:
+        condition: service_started
+      gql_projects:
+        condition: service_started
+      gql_surveys:
+        condition: service_started
+      gql_workflow:
+        condition: service_started
+      gql_workflows:
+        condition: service_started
+    
+    ports:
+      - 20088:8000
+
+
+
+  gql_presences:
+    image: davidnemecek4227/gql_presences:main
+    container_name: z-gql_presences_Nemecek
+    environment:
+      # promenne, ktere lze cist v kontejneru
+      - POSTGRES_USER=yugabyte
+      - POSTGRES_PASSWORD=yugabyte
+      - POSTGRES_HOST=yugabyte1:5433
+      - POSTGRES_DB=data
+      - GQLUG_ENDPOINT_URL=http://gql_ug:8000/gql
+      - JWTPUBLICKEYURL=http://frontend:8000/oauth/publickey
+      - JWTRESOLVEUSERPATHURL=http://frontend:8000/oauth/userinfo
+      - DEMO=true
+    healthcheck:
+      # definice, umoznujici provest test, zda je kontejner v poradku
+      test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
+      interval: 20s
+      retries: 10
+      start_period: 20s
+      timeout: 10s
+    restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+    
+    depends_on:
+      yugabyte1:
+        condition: service_started
+      yugabyte2:
+        condition: service_started
+      yugabyte3:
+        condition: service_started
+      yugabyte-init:
+        condition: service_completed_successfully
+      gql_ug:
+        condition: service_started
+      # gql_ug_hrbolek:
+      #   condition: service_started
+      gql_events:
+        condition: service_started
+      gql_externalids:
+        condition: service_started
+      gql_facilities:
+        condition: service_started
+      gql_forms:
+        condition: service_started
+      gql_granting:
+        condition: service_started
+      gql_lessons:
+        condition: service_started
+      gql_preferences:
+        condition: service_started
+      gql_projects:
+        condition: service_started
+      gql_surveys:
+        condition: service_started
+      gql_workflow:
+        condition: service_started
+      gql_workflows:
+        condition: service_started
+      gql_documents:
+        condition: service_started
+    
+    ports:
+      - 31121:8000  # ray made this port number up
+
+
+
+  gql_publications_a:
+    image: kozmycz/gql_publications_a:latest
+    container_name: z-gql_publications_a_Kozma
+    # build:
+    #   # context definuje cestu k popisu
+    #   context: .
+    environment:
+      # promenne, ktere lze cist v kontejneru
+      - POSTGRES_USER=yugabyte
+      - POSTGRES_PASSWORD=yugabyte
+      - POSTGRES_HOST=yugabyte1:5433
+      - POSTGRES_DB=data
+      - GQLUG_ENDPOINT_URL=http://gql_ug:8000/gql
+      - JWTPUBLICKEYURL=http://frontend:8000/oauth/publickey
+      - JWTRESOLVEUSERPATHURL=http://frontend:8000/oauth/userinfo
+      - DEMO=true
+    healthcheck:
+      # definice, umoznujici provest test, zda je kontejner v poradku
+      test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
+      interval: 20s
+      retries: 10
+      start_period: 20s
+      timeout: 10s
+    restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+    
+    depends_on:
+      yugabyte1:
+        condition: service_started
+      yugabyte2:
+        condition: service_started
+      yugabyte3:
+        condition: service_started
+      yugabyte-init:
+        condition: service_completed_successfully
+      gql_ug:
+        condition: service_started
+      # gql_ug_hrbolek:
+      #   condition: service_started
+      gql_events:
+        condition: service_started
+      gql_externalids:
+        condition: service_started
+      gql_facilities:
+        condition: service_started
+      gql_forms:
+        condition: service_started
+      gql_granting:
+        condition: service_started
+      gql_lessons:
+        condition: service_started
+      gql_preferences:
+        condition: service_started
+      gql_projects:
+        condition: service_started
+      gql_surveys:
+        condition: service_started
+      gql_workflow:
+        condition: service_started
+      gql_workflows:
+        condition: service_started
+      gql_documents:
+        condition: service_started
+      gql_presences:
+        condition: service_started
+
+    ports:
+      - 31223:8000  # ray made this port number up
+
+
+
+  gql_grantinga:
+    image: hieuductran231/gql_granting:main
+    container_name: z-gql_grantinga_Tran
+    # build:
+    #   # context definuje cestu k popisu
+    #   context: .
+    environment:
+      # promenne, ktere lze cist v kontejneru
+      - POSTGRES_USER=yugabyte
+      - POSTGRES_PASSWORD=yugabyte
+      - POSTGRES_HOST=yugabyte1:5433
+      - POSTGRES_DB=data
+      - GQLUG_ENDPOINT_URL=http://gql_ug:8000/gql
+      - JWTPUBLICKEYURL=http://frontend:8000/oauth/publickey
+      - JWTRESOLVEUSERPATHURL=http://frontend:8000/oauth/userinfo
+      - DEMO=True
+    healthcheck:
+      # definice, umoznujici provest test, zda je kontejner v poradku
+      test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
+      interval: 20s
+      retries: 10
+      start_period: 20s
+      timeout: 10s
+    restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+    
+    depends_on:
+      yugabyte1:
+        condition: service_started
+      yugabyte2:
+        condition: service_started
+      yugabyte3:
+        condition: service_started
+      yugabyte-init:
+        condition: service_completed_successfully
+      gql_ug:
+        condition: service_started
+      # gql_ug_hrbolek:
+      #   condition: service_started
+      gql_events:
+        condition: service_started
+      gql_externalids:
+        condition: service_started
+      gql_facilities:
+        condition: service_started
+      gql_forms:
+        condition: service_started
+      gql_granting:
+        condition: service_started
+      gql_lessons:
+        condition: service_started
+      gql_preferences:
+        condition: service_started
+      gql_projects:
+        condition: service_started
+      gql_surveys:
+        condition: service_started
+      gql_workflow:
+        condition: service_started
+      gql_workflows:
+        condition: service_started
+      gql_documents:
+        condition: service_started
+      gql_presences:
+        condition: service_started
+      gql_publications_a:
+        condition: service_started
+    
+    ports:
+      - 31122:8000  # ray made this port number up
