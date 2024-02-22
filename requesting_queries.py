@@ -156,7 +156,11 @@ graphql_queries = {
   }""",
 
   "gql_workflow" : """{
-    ************************ dont have yet *****************************
+    workflowPage {
+      id
+      name
+      lastchange
+    }
   }""",
   
 
@@ -176,8 +180,9 @@ graphql_queries = {
 # print(graphql_queries)
 
 
-
+f = open("output.txt", "a")
 print()
+print("Name\tAvg time\tVar ", file=f)
 for query in graphql_queries:
 
   graphql_query = graphql_queries[query]
@@ -203,7 +208,7 @@ for query in graphql_queries:
 
 
 
-
+  
   for i in range(100):
     start_time = time.time()
 
@@ -228,13 +233,14 @@ for query in graphql_queries:
   print("************ ", query, " ************")
   if error:
     print("ERROR")
+    pass
   else:
     # print(times)
     times.sort()
     # print(times)
     numpy_times = np.asarray(times, dtype=np.float32)
     print(kstest(numpy_times, 'norm'))
-    print("Average time: ", 1000*sum(times)/len(times), " ms")
+    print(query, "\t", 1000*sum(times)/len(times), "\t", np.var(numpy_times).item()*1000, file=f)
     print("Variance: ", np.var(numpy_times).item()*1000, " ms")
 
     # plt.hist(numpy_times, edgecolor='black', bins=20)
@@ -242,7 +248,7 @@ for query in graphql_queries:
 
   print()
   
-
+f.close()
 
 
   # spocitej rozptyl
