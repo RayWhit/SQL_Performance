@@ -1,0 +1,359 @@
+version: '3.8'
+
+services:
+
+############# apollo #######################
+  apollo:
+    image: hrbolek/apollo_federation:latest
+    container_name: apollo
+    environment:
+      # promenne, ktere lze cist v kontejneru
+      - PORT=3000
+      - |
+        SERVICES=
+        [
+          {"name": "ug", "url": "http://gql_ug:8000/gql"},
+          {"name": "events", "url": "http://gql_events:8000/gql"},
+          {"name": "granting", "url": "http://gql_granting:8000/gql"},
+          {"name": "projects", "url": "http://gql_projects:8000/gql"}
+        ]
+      # ug has to be part of services
+
+    healthcheck:
+      # definice, umoznujici provest test, zda je kontejner v poradku (vsimnete si portu a srovnejte s portem v environment)
+      interval: 60s
+      retries: 3
+      start_period: 60s
+      timeout: 10s
+    restart: on-failure:3 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+
+    depends_on:
+      - gql_events
+      - gql_ug
+    
+    ports: #v deploymentu by nebylo zadne mapovani portu
+      - 33000:3000
+
+
+
+######################## frontend ##############################
+  frontend:
+    image: hrbolek/frontend
+    container_name: frontend
+    environment:
+      - DEMO=False
+      - GQL_PROXY=http://apollo:3000/api/gql/
+      - SALT=fe1c71b2-74c0-41e5-978f-eecbffac7418    # copied from github.com/hrbolek/_uois
+    ports:
+      - 33080:8000
+    depends_on:
+      apollo:
+        condition: service_started
+
+
+######################## student containers ##############################
+
+  ########## UG ##########
+  yugabyte-ug1:
+    image: yugabytedb/yugabyte:2.19.3.0-b140
+    container_name: yugabyte1-ug
+    ports:
+      - "7000:7000"
+      - "9001:9000"   # rebind because of portainer
+      - "15433:15433" # cluster GUI
+      - "5433:5433"
+      - "9042:9042"
+    command: ["bin/yugabyted", "start", "--daemon=false"]
+
+  yugabyte-ug2:
+    image: yugabytedb/yugabyte:2.19.3.0-b140
+    container_name: yugabyte2-ug
+    command: ["bin/yugabyted", "start", "--daemon=false", "--join=yugabyte-ug1"]
+    depends_on:
+      - yugabyte-ug1
+    restart: on-failure:10
+
+  yugabyte-ug3:
+    image: yugabytedb/yugabyte:2.19.3.0-b140
+    container_name: yugabyte3-ug
+    command: ["bin/yugabyted", "start", "--daemon=false", "--join=yugabyte-ug2"]
+    depends_on:
+      - yugabyte-ug1
+    restart: on-failure:10
+
+  # creates database "data" after yugabyte nodes start
+  yugabyte-ug-init:
+    image: yugabytedb/yugabyte:2.19.3.0-b140
+    container_name: yugabyte-ug-init
+    depends_on:
+      - yugabyte-ug1
+      - yugabyte-ug2
+      - yugabyte-ug3
+    entrypoint: /bin/sh
+    command: -c "sleep 20 && /home/yugabyte/bin/ysqlsh --echo-queries --host yugabyte-ug1 -U postgres -d postgres -c 'CREATE DATABASE data;'"
+
+  gql_ug:
+    image: kavic/ug:latest
+    container_name: z-gql_ug_Holik-Kava
+    environment:
+      # promenne, ktere lze cist v kontejneru
+      - POSTGRES_USER=yugabyte
+      - POSTGRES_PASSWORD=yugabyte
+      - POSTGRES_HOST=yugabyte-ug1:5433
+      - POSTGRES_DB=data
+      - GQLUG_ENDPOINT_URL=http://gql_ug:8000/gql
+      - JWTPUBLICKEYURL=http://frontend:8000/oauth/publickey
+      - JWTRESOLVEUSERPATHURL=http://frontend:8000/oauth/userinfo
+      - DEMO=True
+    healthcheck:
+      # definice, umoznujici provest test, zda je kontejner v poradku
+      test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
+      interval: 20s
+      retries: 10
+      start_period: 20s
+      timeout: 10s
+    restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+
+    depends_on:
+      yugabyte-ug1:
+        condition: service_started
+      yugabyte-ug2:
+        condition: service_started
+      yugabyte-ug3:
+        condition: service_started
+      yugabyte-ug-init:
+        condition: service_completed_successfully
+
+    ports: #v deploymentu by nebylo zadne mapovani portu
+      - 31120:8000
+  
+  
+  ########## EVENTS ##########
+
+  yugabyte-events1:
+    image: yugabytedb/yugabyte:2.19.3.0-b140
+    container_name: yugabyte-events1
+    ports:
+      - "7001:7000"
+      - "9002:9000"   # rebind because of portainer
+      - "15434:15433" # cluster GUI
+      - "5434:5433"
+      - "9043:9042"
+    command: ["bin/yugabyted", "start", "--daemon=false"]
+
+  yugabyte-events2:
+    image: yugabytedb/yugabyte:2.19.3.0-b140
+    container_name: yugabyte-events2
+    command: ["bin/yugabyted", "start", "--daemon=false", "--join=yugabyte-events1"]
+    depends_on:
+      - yugabyte-events1
+    restart: on-failure:10
+
+  yugabyte-events3:
+    image: yugabytedb/yugabyte:2.19.3.0-b140
+    container_name: yugabyte-events3
+    command: ["bin/yugabyted", "start", "--daemon=false", "--join=yugabyte-events1"]
+    depends_on:
+      - yugabyte-events1
+    restart: on-failure:10
+
+  # creates database "data" after yugabyte nodes start
+  yugabyte-events-init:
+    image: yugabytedb/yugabyte:2.19.3.0-b140
+    container_name: yugabyte-events-init
+    depends_on:
+      - yugabyte-events1
+      - yugabyte-events2
+      - yugabyte-events3
+    entrypoint: /bin/sh
+    command: -c "sleep 20 && /home/yugabyte/bin/ysqlsh --echo-queries --host yugabyte-events1 -U postgres -d postgres -c 'CREATE DATABASE data;'"
+
+  gql_events:
+    image: nafreju2/gql_events:latest
+    container_name: z-gql_events_Bures-Sedlackova
+    environment:
+      # promenne, ktere lze cist v kontejneru
+      - POSTGRES_USER=yugabyte
+      - POSTGRES_PASSWORD=yugabyte
+      - POSTGRES_HOST=yugabyte-events1:5433
+      - POSTGRES_DB=data
+      - GQLUG_ENDPOINT_URL=http://gql_ug:8000/gql
+      - JWTPUBLICKEYURL=http://frontend:8000/oauth/publickey
+      - JWTRESOLVEUSERPATHURL=http://frontend:8000/oauth/userinfo
+      - DEMO=true
+    healthcheck:
+      # definice, umoznujici provest test, zda je kontejner v poradku
+      test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
+      interval: 20s
+      retries: 10
+      start_period: 20s
+      timeout: 10s
+    restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+    
+    depends_on:
+      yugabyte-events1:
+        condition: service_started
+      yugabyte-events2:
+        condition: service_started
+      yugabyte-events3:
+        condition: service_started
+      yugabyte-events-init:
+        condition: service_completed_successfully
+
+    ports:
+      - 31126:8000  # ray made up this port number
+  
+
+  ########## EXTERNAL IDs ##########
+
+  yugabyte-projects1:
+    image: yugabytedb/yugabyte:2.19.3.0-b140
+    container_name: yugabyte-projects1
+    ports:
+      - "7002:7000"
+      - "9003:9000"   # rebind because of portainer
+      - "15435:15433" # cluster GUI
+      - "5435:5433"
+      - "9044:9042"
+    command: ["bin/yugabyted", "start", "--daemon=false"]
+
+  yugabyte-projects2:
+    image: yugabytedb/yugabyte:2.19.3.0-b140
+    container_name: yugabyte-projects2
+    command: ["bin/yugabyted", "start", "--daemon=false", "--join=yugabyte-projects1"]
+    depends_on:
+      - yugabyte-projects1
+    restart: on-failure:10
+
+  yugabyte-projects3:
+    image: yugabytedb/yugabyte:2.19.3.0-b140
+    container_name: yugabyte-projects3
+    command: ["bin/yugabyted", "start", "--daemon=false", "--join=yugabyte-projects1"]
+    depends_on:
+      - yugabyte-projects1
+    restart: on-failure:10
+
+  # creates database "data" after yugabyte nodes start
+  yugabyte-projects-init:
+    image: yugabytedb/yugabyte:2.19.3.0-b140
+    container_name: yugabyte-projects-init
+    depends_on:
+      - yugabyte-projects1
+      - yugabyte-projects2
+      - yugabyte-projects3
+    entrypoint: /bin/sh
+    command: -c "sleep 20 && /home/yugabyte/bin/ysqlsh --echo-queries --host yugabyte-projects1 -U postgres -d postgres -c 'CREATE DATABASE data;'"
+    restart: on-failure:3
+
+  gql_projects:
+    image: frajxd/gql_projects:latest
+    container_name: z-gql_projects_Smid-Spanik
+    environment:
+      # promenne, ktere lze cist v kontejneru
+      - POSTGRES_USER=yugabyte
+      - POSTGRES_PASSWORD=yugabyte
+      - POSTGRES_HOST=yugabyte-projects1:5433
+      - POSTGRES_DB=data
+      - GQLUG_ENDPOINT_URL=http://gql_ug:8000/gql
+      - JWTPUBLICKEYURL=http://frontend:8000/oauth/publickey
+      - JWTRESOLVEUSERPATHURL=http://frontend:8000/oauth/userinfo
+      - DEMO=True
+    healthcheck:
+      # definice, umoznujici provest test, zda je kontejner v poradku
+      test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
+      interval: 20s
+      retries: 10
+      start_period: 20s
+      timeout: 10s
+    restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+    
+    depends_on:
+      yugabyte-projects1:
+        condition: service_started
+      yugabyte-projects2:
+        condition: service_started
+      yugabyte-projects3:
+        condition: service_started
+      yugabyte-projects-init:
+        condition: service_completed_successfully
+    
+    ports:
+      - 32801:8000 # ray made up this port number
+
+
+  ########## GRANTING ##########
+
+  yugabyte-granting1:
+    image: yugabytedb/yugabyte:2.19.3.0-b140
+    container_name: yugabyte-granting1
+    ports:
+      - "7003:7000"
+      - "9004:9000"   # rebind because of portainer
+      - "15436:15433" # cluster GUI
+      - "5436:5433"
+      - "9045:9042"
+    command: ["bin/yugabyted", "start", "--daemon=false"]
+
+  yugabyte-granting2:
+    image: yugabytedb/yugabyte:2.19.3.0-b140
+    container_name: yugabyte-granting2
+    command: ["bin/yugabyted", "start", "--daemon=false", "--join=yugabyte-granting1"]
+    depends_on:
+      - yugabyte-granting1
+    restart: on-failure:10
+
+  yugabyte-granting3:
+    image: yugabytedb/yugabyte:2.19.3.0-b140
+    container_name: yugabyte-granting3
+    command: ["bin/yugabyted", "start", "--daemon=false", "--join=yugabyte-granting1"]
+    depends_on:
+      - yugabyte-granting1
+    restart: on-failure:10
+
+  # creates database "data" after yugabyte nodes start
+  yugabyte-granting-init:
+    image: yugabytedb/yugabyte:2.19.3.0-b140
+    container_name: yugabyte-granting-init
+    depends_on:
+      - yugabyte-granting1
+      - yugabyte-granting2
+      - yugabyte-granting3
+    entrypoint: /bin/sh
+    command: -c "sleep 20 && /home/yugabyte/bin/ysqlsh --echo-queries --host yugabyte-granting1 -U postgres -d postgres -c 'CREATE DATABASE data;'"
+    restart: on-failure:3
+  
+
+  gql_granting:
+    image: oklement/gql_granting:latest
+    container_name: z-gql_granting_Klement-Novotny-Wala
+    environment:
+      # promenne, ktere lze cist v kontejneru
+      - POSTGRES_USER=yugabyte
+      - POSTGRES_PASSWORD=yugabyte
+      - POSTGRES_HOST=yugabyte-granting1:5433
+      - POSTGRES_DB=data
+      - GQLUG_ENDPOINT_URL=http://gql_ug:8000/gql
+      - JWTPUBLICKEYURL=http://frontend:8000/oauth/publickey
+      - JWTRESOLVEUSERPATHURL=http://frontend:8000/oauth/userinfo
+      - DEMO=True
+    healthcheck:
+      # definice, umoznujici provest test, zda je kontejner v poradku
+      test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
+      interval: 60s
+      retries: 10
+      start_period: 60s
+      timeout: 10s
+    restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+
+    depends_on:
+      yugabyte-granting1:
+        condition: service_started
+      yugabyte-granting2:
+        condition: service_started
+      yugabyte-granting3:
+        condition: service_started
+      yugabyte-granting-init:
+        condition: service_completed_successfully
+    
+    ports: #v deploymentu by nebylo zadne mapovani portu
+       - 31125:8000
