@@ -21,9 +21,7 @@ services:
       - "15433:15433" # cluster GUI
       - "5433:5433"
       - "9042:9042"
-    
     command: ["bin/yugabyted", "start", "--daemon=false"]
-
 
   yugabyte2:
     image: yugabytedb/yugabyte:2.20.1.3-b3
@@ -33,7 +31,6 @@ services:
       - yugabyte1
     restart: on-failure:10
 
-
   yugabyte3:
     image: yugabytedb/yugabyte:2.20.1.3-b3
     container_name: yugabyte3
@@ -41,7 +38,6 @@ services:
     depends_on:
       - yugabyte1
     restart: on-failure:10
-
 
   # creates database "data" after yugabyte nodes start
   yugabyte-init:
@@ -53,7 +49,6 @@ services:
       - yugabyte3
     entrypoint: /bin/sh
     command: -c "sleep 20 && /home/yugabyte/bin/ysqlsh --echo-queries --host yugabyte1 -U postgres -d postgres -c 'CREATE DATABASE data;'"
-
 
 
 ############# apollo #######################
@@ -110,7 +105,6 @@ services:
       - yugabyte1
       - yugabyte2
       - yugabyte3
-      #- yugabyte-init
       - gql_events
       - gql_externalids
       - gql_facilities
@@ -121,7 +115,6 @@ services:
       - gql_projects
       - gql_surveys
       - gql_ug
-      # - gql_ug_hrbolek
       - gql_workflow
       - gql_workflows
       - gql_documents
@@ -130,7 +123,6 @@ services:
       - gql_grantinga
     
     ports: #v deploymentu by nebylo zadne mapovani portu
-    #   # vnejsi port : port, kde sluzbu poskytuje kontejner
       - 33000:3000
 
 
@@ -218,9 +210,7 @@ services:
         condition: service_started
       yugabyte-init:
         condition: service_completed_successfully
-
     ports: #v deploymentu by nebylo zadne mapovani portu
-    #   # vnejsi port : port, kde sluzbu poskytuje kontejner
       - 31120:8000
   
   
@@ -258,9 +248,6 @@ services:
         condition: service_completed_successfully
       gql_ug:
         condition: service_started
-      # gql_ug_hrbolek:
-      #   condition: service_started
-
     ports:
       - 31126:8000  # ray made up this port number
   
@@ -299,11 +286,8 @@ services:
         condition: service_completed_successfully
       gql_ug:
         condition: service_started
-      # gql_ug_hrbolek:
-      #   condition: service_started
       gql_events:
         condition: service_started
-    
     ports:
       - 32801:8000 # ray made up this port number
 
@@ -342,15 +326,11 @@ services:
         condition: service_completed_successfully
       gql_ug:
         condition: service_started
-      # gql_ug_hrbolek:
-      #   condition: service_started
       gql_events:
         condition: service_started
       gql_externalids:
         condition: service_started
-    
     ports: #v deploymentu by nebylo zadne mapovani portu
-    #   # vnejsi port : port, kde sluzbu poskytuje kontejner
        - 31125:8000
 
   
@@ -388,17 +368,15 @@ services:
         condition: service_completed_successfully
       gql_ug:
         condition: service_started
-      # gql_ug_hrbolek:
-      #   condition: service_started
       gql_events:
         condition: service_started
       gql_externalids:
         condition: service_started
       gql_facilities:
         condition: service_started
-    
     ports:
       - 31127:8000  # ray made this port number up
+
 
 
   gql_granting:
@@ -434,8 +412,6 @@ services:
         condition: service_completed_successfully
       gql_ug:
         condition: service_started
-      # gql_ug_hrbolek:
-      #   condition: service_started
       gql_events:
         condition: service_started
       gql_externalids:
@@ -444,10 +420,8 @@ services:
         condition: service_started
       gql_forms:
         condition: service_started
-    
     ports:
       - 32811:8000 # ray made up this port number
-
 
 
 
@@ -484,8 +458,6 @@ services:
         condition: service_completed_successfully
       gql_ug:
         condition: service_started
-      # gql_ug_hrbolek:
-      #   condition: service_started
       gql_events:
         condition: service_started
       gql_externalids:
@@ -496,7 +468,6 @@ services:
         condition: service_started
       gql_granting:
         condition: service_started
-
     ports:
       - 31124:8000 # ray made up this port number
 
@@ -535,8 +506,6 @@ services:
         condition: service_completed_successfully
       gql_ug:
         condition: service_started
-      # gql_ug_hrbolek:
-      #   condition: service_started
       gql_events:
         condition: service_started
       gql_externalids:
@@ -549,7 +518,6 @@ services:
         condition: service_started
       gql_lessons:
         condition: service_started
-
     ports:
       - 32123:8000  # ray made this port number up
 
@@ -588,8 +556,6 @@ services:
         condition: service_completed_successfully
       gql_ug:
         condition: service_started
-      # gql_ug_hrbolek:
-      #   condition: service_started
       gql_events:
         condition: service_started
       gql_externalids:
@@ -604,7 +570,6 @@ services:
         condition: service_started
       gql_preferences:
         condition: service_started
-
     ports:
       - 32800:8000
 
@@ -643,8 +608,6 @@ services:
         condition: service_completed_successfully
       gql_ug:
         condition: service_started
-      # gql_ug_hrbolek:
-      #   condition: service_started
       gql_events:
         condition: service_started
       gql_externalids:
@@ -661,7 +624,6 @@ services:
         condition: service_started
       gql_projects:
         condition: service_started
-    
     ports:
       - 32122:8000  # ray made this port number up
 
@@ -700,8 +662,6 @@ services:
         condition: service_completed_successfully
       gql_ug:
         condition: service_started
-      # gql_ug_hrbolek:
-      #   condition: service_started
       gql_events:
         condition: service_started
       gql_externalids:
@@ -720,10 +680,8 @@ services:
         condition: service_started
       gql_surveys:
         condition: service_started
-
     ports:
       - 31123:8000
-
 
 
 
@@ -760,8 +718,6 @@ services:
         condition: service_completed_successfully
       gql_ug:
         condition: service_started
-      # gql_ug_hrbolek:
-      #   condition: service_started
       gql_events:
         condition: service_started
       gql_externalids:
@@ -782,10 +738,8 @@ services:
         condition: service_started
       gql_workflow:
         condition: service_started
-    
     ports:
       - 31133:8000  # ray made up this port number
-
 
 
 
@@ -822,8 +776,6 @@ services:
         condition: service_completed_successfully
       gql_ug:
         condition: service_started
-      # gql_ug_hrbolek:
-      #   condition: service_started
       gql_events:
         condition: service_started
       gql_externalids:
@@ -846,7 +798,6 @@ services:
         condition: service_started
       gql_workflows:
         condition: service_started
-    
     ports:
       - 20088:8000
 
@@ -885,8 +836,6 @@ services:
         condition: service_completed_successfully
       gql_ug:
         condition: service_started
-      # gql_ug_hrbolek:
-      #   condition: service_started
       gql_events:
         condition: service_started
       gql_externalids:
@@ -911,7 +860,6 @@ services:
         condition: service_started
       gql_documents:
         condition: service_started
-    
     ports:
       - 31121:8000  # ray made this port number up
 
@@ -920,9 +868,6 @@ services:
   gql_publications_a:
     image: kozmycz/gql_publications_a:latest
     container_name: z-gql_publications_a_Kozma
-    # build:
-    #   # context definuje cestu k popisu
-    #   context: .
     environment:
       # promenne, ktere lze cist v kontejneru
       - POSTGRES_USER=yugabyte
@@ -953,8 +898,6 @@ services:
         condition: service_completed_successfully
       gql_ug:
         condition: service_started
-      # gql_ug_hrbolek:
-      #   condition: service_started
       gql_events:
         condition: service_started
       gql_externalids:
@@ -981,7 +924,6 @@ services:
         condition: service_started
       gql_presences:
         condition: service_started
-
     ports:
       - 31223:8000  # ray made this port number up
 
@@ -990,9 +932,6 @@ services:
   gql_grantinga:
     image: hieuductran231/gql_granting:main
     container_name: z-gql_grantinga_Tran
-    # build:
-    #   # context definuje cestu k popisu
-    #   context: .
     environment:
       # promenne, ktere lze cist v kontejneru
       - POSTGRES_USER=yugabyte
@@ -1023,8 +962,6 @@ services:
         condition: service_completed_successfully
       gql_ug:
         condition: service_started
-      # gql_ug_hrbolek:
-      #   condition: service_started
       gql_events:
         condition: service_started
       gql_externalids:
@@ -1053,6 +990,5 @@ services:
         condition: service_started
       gql_publications_a:
         condition: service_started
-    
     ports:
       - 31122:8000  # ray made this port number up
