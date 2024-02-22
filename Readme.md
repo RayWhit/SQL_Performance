@@ -33,11 +33,22 @@ pridat Apollo do kontejneru, dopsat do pole vsechny kontejnery (services), pak d
 
 
 
+Udelat statistiku, prumernej cas, rozptyl u vsech kontejneru na postgres, yugabyte
+
+
+
+
+
 questions
 
-cannot connect apollo to containers (errors like: Type "RBACObjectGQLModel" is an extension type, but there is no type definition for "RBACObjectGQLModel" in any subgraph.)
 
-cannot curl to other containers besides forms and events
+multiple databases
+    does every pg database need to have its own UG -> no
+
+
+
+new questions
+    what does frontend do - which db should it use? should it have it's own db in multidb compose
 
 
 
