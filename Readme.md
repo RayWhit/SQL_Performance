@@ -48,6 +48,8 @@ multiple databases
 
 
 new questions
+    what to do with cockroach - show container
+    multi cluster Yuga & Roach DBs or just single
     what does frontend do - which db should it use? should it have it's own db in multidb compose
 
 
