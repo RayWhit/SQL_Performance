@@ -1,0 +1,18 @@
+{  
+  "gql_ug" : "{  userPage {\n    id\n    name\n    surname\n    email\n    valid\n  }\n}",
+  "gql_documents" : "{\n  documentsPage {\n    author\n    created\n    description\n    dspaceId\n    id\n    lastchange\n    name\n  }\n}",
+  "gql_events" : "{\n  eventGroupPage {\n    id\n    groupId\n    eventId\n    created\n    lastchange\n  }\n}",
+  "gql_externalids" : "{\n  externalidtypePage {\n    id\n    name\n    lastchange\n    created\n    nameEn\n  }\n}",
+  "gql_facilities" : "{\n  facilityEventStateTypePage {\n    id\n    name\n    nameEn\n    lastchange\n  }\n}",
+  "gql_forms" : "{\n  formCategoryPage {\n    id\n    name\n    nameEn\n    created\n    lastchange\n  }\n}",
+  "gql_granting" : "{\n  programPage {\n    id\n    name\n    lastchange\n    nameEn\n  }\n}",
+  "gql_grantinga" : "{\n  acclassificationTypePage {\n    id\n    name\n    nameEn\n    lastchange\n  }\n}",
+  "gql_lessons" : "{\n  plannedLessonPage {\n    id\n    name\n    lastchange\n    length\n    order\n  }\n}",
+  "gql_preferences" : "{\n  preferenceSettingsPage {\n    id\n    name\n    nameEn\n    created\n    order\n    preferenceSettingsTypeId\n  }\n}",
+  "gql_presences" : "{\n  taskPage {\n    id\n    name\n    lastchange\n    briefDes\n    dateOfEntry\n    dateOfFulfillment\n    dateOfSubmission\n    detailedDes\n    reference\n  }\n}",
+  "gql_projects" : "{\n  projectCategoryPage {\n    id\n    lastchange\n    name\n    nameEn\n  }\n}",
+  "gql_publications" : "{\n  publicationPage {\n    id\n    name\n    lastchange\n    place\n    publishedDate\n    reference\n    valid\n  }\n}",
+  "gql_surveys" : "{\n  surveyPage {\n    id\n    name\n    lastchange\n  }\n}",
+  "gql_workflow" : "{\n  workflowPage {\n    id\n    name\n    lastchange\n  }\n}",
+  "gql_workflows" : "{\n  authorizationGroupPage {\n    id\n    created\n    accesslevel\n    lastchange\n  }\n}"
+}
