@@ -327,16 +327,16 @@ services:
       POSTGRES_PASSWORD: root
       POSTGRES_DB: data
     ports:
-      - "5434:5432"
+      - "5449:5432"
 
   gql_facilities_hrbolek:
     image: hrbolek/gql_facilities:latest
     container_name: z-gql_facilities_Hrbolek
     environment:
       # promenne, ktere lze cist v kontejneru
+      - POSTGRES_HOST=postgres_gql_facilities_hrbolek:5432
       - POSTGRES_USER=root
       - POSTGRES_PASSWORD=root
-      - POSTGRES_HOST=postgres:5432
       - POSTGRES_DB=data
       - GQLUG_ENDPOINT_URL=http://gql_ug:8000/gql
       - JWTPUBLICKEYURL=http://frontend:8000/oauth/publickey

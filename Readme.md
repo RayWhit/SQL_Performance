@@ -55,6 +55,8 @@ new questions
         what is salt? - for security - not important now
 
 pojede cockroach pokud nebude insecure a v connection string ssl=disable bude oddelan
+    asi ne - pokud neni insecure sql pozadavek vypada takto:
+        postgresql://root@localhost:26257?sslcert=certs%2Fclient.root.crt&sslkey=certs%2Fclient.root.key&sslmode=verify-full&sslrootcert=certs%2Fca.crt
 
 
 
@@ -152,8 +154,6 @@ Connects to pgadmin (sort of)
 
 
 ## yugabyte
-
-Use: docker-compose-y2.yml
 
 Connect to yb-tserver-n1
 Use container ip address as host.

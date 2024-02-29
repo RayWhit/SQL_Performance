@@ -335,6 +335,48 @@ services:
     ports: #v deploymentu by nebylo zadne mapovani portu
        - 31125:8000
 
+
+
+  gql_facilities_hrbolek:
+    image: hrbolek/gql_facilities:latest
+    container_name: z-gql_facilities_Hrbolek
+    environment:
+      # promenne, ktere lze cist v kontejneru
+      - POSTGRES_USER=yugabyte
+      - POSTGRES_PASSWORD=yugabyte
+      - POSTGRES_HOST=yugabyte1:5433
+      - POSTGRES_DB=data
+      - GQLUG_ENDPOINT_URL=http://gql_ug:8000/gql
+      - JWTPUBLICKEYURL=http://frontend:8000/oauth/publickey
+      - JWTRESOLVEUSERPATHURL=http://frontend:8000/oauth/userinfo
+      - DEMO=True
+    healthcheck:
+      # definice, umoznujici provest test, zda je kontejner v poradku
+      test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
+      interval: 60s
+      retries: 10
+      start_period: 60s
+      timeout: 10s
+    restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+
+    depends_on:
+      yugabyte1:
+        condition: service_started
+      yugabyte2:
+        condition: service_started
+      yugabyte3:
+        condition: service_started
+      yugabyte-init:
+        condition: service_completed_successfully
+      gql_ug:
+        condition: service_started
+      gql_events:
+        condition: service_started
+      gql_externalids:
+        condition: service_started
+    ports: #v deploymentu by nebylo zadne mapovani portu
+       - 41125:8000
+
   
 
   gql_forms:
