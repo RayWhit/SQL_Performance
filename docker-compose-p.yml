@@ -35,8 +35,10 @@ services:
         [
           {"name": "ug", "url": "http://gql_ug:8000/gql"},
           {"name": "forms", "url": "http://gql_forms:8000/gql"},
+          {"name": "facilities", "url": "http://gql_facilities_hrbolek:8000/gql"},
           {"name": "events", "url": "http://gql_events:8000/gql"},
           {"name": "granting", "url": "http://gql_granting:8000/gql"},
+          {"name": "lessons", "url": "http://gql_lessons:8000/gql"},  
           {"name": "projects", "url": "http://gql_projects:8000/gql"},
           {"name": "workflow", "url": "http://gql_workflow:8000/gql"},
           {"name": "workflows", "url": "http://gql_workflows:8000/gql"},
@@ -64,11 +66,12 @@ services:
       # {"name": "ug", "url": "http://gql_ug_hrbolek:8000/gql"},
       # {"name": "ug", "url": "http://gql_ug:8000/gql"},
       # {"name": "forms", "url": "http://gql_forms:8000/gql"},
-      # {"name": "facilities", "url": "http://gql_facilities:8000/gql"},  # Unexpected description
+      # {"name": "facilities", "url": "http://gql_facilities:8000/gql"},  # Unexpected description in apollo
+      # {"name": "facilities", "url": "http://gql_facilities_hrbolek:8000/gql"},  # hrbolek's container
       # {"name": "events", "url": "http://gql_events:8000/gql"},
-      # {"name": "externalids", "url": "http://gql_externalids:8000/gql"},  # [externalids] Type "FacilityGQLModel" is an extension type
+      # {"name": "externalids", "url": "http://gql_externalids:8000/gql"},  # [externalids] Type "PublicationGQLModel" is an extension type
       # {"name": "granting", "url": "http://gql_granting:8000/gql"},  # not compatible with grantinga (Tran), but works
-      # {"name": "lessons", "url": "http://gql_lessons:8000/gql"},  # [lessons] Type "FacilityGQLModel" is an extension type
+      # {"name": "lessons", "url": "http://gql_lessons:8000/gql"},
       # {"name": "projects", "url": "http://gql_projects:8000/gql"},
       # {"name": "workflow", "url": "http://gql_workflow:8000/gql"},
       # {"name": "workflows", "url": "http://gql_workflows:8000/gql"},
@@ -76,7 +79,7 @@ services:
       # {"name": "presences", "url": "http://gql_presences:8000/gql"},
       # {"name": "publications_a", "url": "http://gql_publications_a:8000/gql"},  # ... but type "ID!" in subgraph "publications_a"
       # {"name": "grantinga", "url": "http://gql_grantinga:8000/gql"},  # not compatible with granting (Klement), but works
-      # {"name": "preferences", "url": "http://gql_preferences:8000/gql"},  # [preferences] Type "FacilityGQLModel" is an extension type
+      # {"name": "preferences", "url": "http://gql_preferences:8000/gql"},  # cannot find field "RBACObjectGQLModel.roles"
       # {"name": "surveys", "url": "http://gql_surveys:8000/gql"}
 
     healthcheck:
@@ -298,7 +301,40 @@ services:
     ports: #v deploymentu by nebylo zadne mapovani portu
        - 31125:8000
 
+
+
+  gql_facilities_hrbolek:
+    image: hrbolek/gql_facilities:latest
+    container_name: z-gql_facilities_Hrbolek
+    environment:
+      # promenne, ktere lze cist v kontejneru
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=root
+      - POSTGRES_HOST=postgres:5432
+      - POSTGRES_DB=data
+      - GQLUG_ENDPOINT_URL=http://gql_ug:8000/gql
+      - JWTPUBLICKEYURL=http://frontend:8000/oauth/publickey
+      - JWTRESOLVEUSERPATHURL=http://frontend:8000/oauth/userinfo
+      - DEMO=True
+    healthcheck:
+      # definice, umoznujici provest test, zda je kontejner v poradku
+      test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
+      interval: 60s
+      retries: 10
+      start_period: 60s
+      timeout: 10s
+    restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+
+    depends_on:
+      postgres:
+        condition: service_started
+      gql_ug:
+        condition: service_started
+    
+    ports: #v deploymentu by nebylo zadne mapovani portu
+       - 41125:8000
   
+
 
   gql_forms:
     image: hrbolek/gql_forms:latest
