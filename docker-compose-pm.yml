@@ -24,8 +24,10 @@ services:
         [
           {"name": "ug", "url": "http://gql_ug:8000/gql"},
           {"name": "forms", "url": "http://gql_forms:8000/gql"},
+          {"name": "facilities", "url": "http://gql_facilities_hrbolek:8000/gql"},
           {"name": "events", "url": "http://gql_events:8000/gql"},
           {"name": "granting", "url": "http://gql_granting:8000/gql"},
+          {"name": "lessons", "url": "http://gql_lessons:8000/gql"},  
           {"name": "projects", "url": "http://gql_projects:8000/gql"},
           {"name": "workflow", "url": "http://gql_workflow:8000/gql"},
           {"name": "workflows", "url": "http://gql_workflows:8000/gql"},
@@ -313,6 +315,48 @@ services:
         condition: service_started
     ports: #v deploymentu by nebylo zadne mapovani portu
        - 31125:8000
+
+
+
+  postgres_gql_facilities_hrbolek:
+    image: "postgres:16.0"
+    container_name: postgres_gql_facilities_hrbolek
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: data
+    ports:
+      - "5434:5432"
+
+  gql_facilities_hrbolek:
+    image: hrbolek/gql_facilities:latest
+    container_name: z-gql_facilities_Hrbolek
+    environment:
+      # promenne, ktere lze cist v kontejneru
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=root
+      - POSTGRES_HOST=postgres:5432
+      - POSTGRES_DB=data
+      - GQLUG_ENDPOINT_URL=http://gql_ug:8000/gql
+      - JWTPUBLICKEYURL=http://frontend:8000/oauth/publickey
+      - JWTRESOLVEUSERPATHURL=http://frontend:8000/oauth/userinfo
+      - DEMO=True
+    healthcheck:
+      # definice, umoznujici provest test, zda je kontejner v poradku
+      test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
+      interval: 60s
+      retries: 10
+      start_period: 60s
+      timeout: 10s
+    restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+
+    depends_on:
+      postgres_gql_facilities_hrbolek:
+        condition: service_started
+    
+    ports: #v deploymentu by nebylo zadne mapovani portu
+       - 41125:8000
 
 
 
