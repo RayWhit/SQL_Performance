@@ -1,0 +1,7 @@
+queries_times/
+queries_times_cockroach/
+queries_times_postgres_multiple/
+queries_times_postgres_single/
+queries_times_yugabyte/
+
+overall_stats.docx
