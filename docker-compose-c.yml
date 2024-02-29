@@ -77,6 +77,35 @@ services:
   #   command: -c "sleep 20 && /home/cockroach/bin/ysqlsh --echo-queries --host=roach1:26257 init --insecure"
 
 
+############# apollo #######################
+  apollo:
+    image: hrbolek/apollo_federation:latest
+    container_name: apollo
+    environment:
+      # promenne, ktere lze cist v kontejneru
+      - PORT=3000
+      - |
+        SERVICES=
+        [
+          {"name": "ug", "url": "http://gql_ug:8000/gql"}
+        ]
+ 
+    healthcheck:
+      # definice, umoznujici provest test, zda je kontejner v poradku (vsimnete si portu a srovnejte s portem v environment)
+      interval: 60s
+      retries: 3
+      start_period: 60s
+      timeout: 10s
+    restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+    networks:
+      - roachnet
+    depends_on:
+      - gql_ug
+
+    ports: #v deploymentu by nebylo zadne mapovani portu
+      - 33000:3000
+
+
 ######################## student containers ##############################
   gql_ug:
     image: kavic/ug:cockroach_1.0
