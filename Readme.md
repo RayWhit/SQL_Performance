@@ -48,11 +48,11 @@ multiple databases
 
 
 new questions
-    what to do with cockroach - show container
-    multi cluster Yuga & Roach DBs or just single
+    what to do with cockroach - show container? - test UG - kavic
+    multi cluster Yuga & Roach DBs or just single? - single cluster multi node
     what does frontend do - 
-        which db should it use? should it have it's own db in multidb compose
-        what is salt?
+        which db should it use? should it have it's own db in multidb compose? - not important now - don't worry about it
+        what is salt? - for security - not important now
 
 pojede cockroach pokud nebude insecure a v connection string ssl=disable bude oddelan
 
