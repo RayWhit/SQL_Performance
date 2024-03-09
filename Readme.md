@@ -1,238 +1,243 @@
-# Zadani
-SQL Performance (1 student) STČ Whitehead
-    Vytvořte konfigurace (docker-compose) pro single database Postgres (všechny kontejnery sdílí jednu databázi) 0 b, multiple databases Postgres (každý kontejner má svoji vlastní databázi) 5 b, pro Cocroach 5 b a pro Yugabyte 5 b.
-    Využijte strukturu připravovaných gql dotazů (viz ostatní projekty, json popisy) a realizujte replikovatelná měření se statistickým vyhodnocením (jupyter notebooks, python scripts, knihovna aiohttp) 10 b, součástí statistického vyhodnocení jsou grafické výstupy (např. sloupcové grafy) 10 b, stanovte střední hodnoty a rozptyly. Srovnejte výkon. Potvrďte / vyvraťte hypotézu, že náhodná proměnná má Gaussovo rozdělení 10 b.
-
-## Subukoly
-zprovozneni databazi postgres
-Cocroach - sestavit v docker file - kontejner
-Yugabyte - sestavit v docker file - kontejner
-do denicku jak vse instaluju
-
-clusterova databaze - ???
-multiple docker compose files
-
-na githubu denicek a docker compose pro vsechny
-
-
-dokumentace yugabyte, cockroach - 5433 implicitni heslo
-
-connect cockroach to pgadmin
-
-find out how to connect cockroachdb database with pgadmin (pgadmin sees the server at this point)
-
-make sql evolution communicate with cockroach and yugabyte
+# Assignment
+## SQL Performance (1 student) STČ
+Create configurations (docker-compose) for single database Postgres (all containers share one database) 10 pts, multiple databases Postgres (each container has its own database) 5 pts, for Cocroach 5 pts, and for Yugabyte 5 pts.
+Use the structure of the prepared gql queries (see other projects, json descriptions) and implement replicable measurements with statistical evaluation (jupyter notebooks, python scripts, aiohttp library) 10 b, include graphical outputs (e.g. bar charts) 10 b, determine means and variances. Compare performance. Confirm/refute the hypothesis that a random variable has a Gaussian distribution 10 pts.
 
 
 
+# Postgres single DB
+All containers connect to a single postgres DB.
 
-pridat Apollo do kontejneru, dopsat do pole vsechny kontejnery (services), pak davam pozadavek na apollo
+## Connect to PGAdmin
+    user: root
+    password: root
+    host: postgres
+    port: 5432
+    maintenance database: postgres
 
-3 nodova databaze
+## Usage
+Compose the yml file 'docker-compose-p.yml'
 
+Wait for every container to connect to postgres DB
 
+Make sure that 'apollo' is running
 
+Run 'request_queries.py'.
 
-Udelat statistiku, prumernej cas, rozptyl u vsech kontejneru na postgres, yugabyte
+Run 'generate_statistics.py'
 
-
-
-
-
-questions
-
-
-multiple databases
-    does every pg database need to have its own UG -> no
-
-
-
-new questions
-    what to do with cockroach - show container? - test UG - kavic
-    multi cluster Yuga & Roach DBs or just single? - single cluster multi node
-    what does frontend do - 
-        which db should it use? should it have it's own db in multidb compose? - not important now - don't worry about it
-        what is salt? - for security - not important now
-
-pojede cockroach pokud nebude insecure a v connection string ssl=disable bude oddelan
-    asi ne - pokud neni insecure sql pozadavek vypada takto:
-        postgresql://root@localhost:26257?sslcert=certs%2Fclient.root.crt&sslkey=certs%2Fclient.root.key&sslmode=verify-full&sslrootcert=certs%2Fca.crt
+## Troubleshoot
+If 'apollo' not running because of a gql container error, remove this container from 'SERVICES' in 'apollo' in 'docker-compose-p.yml' and restart apollo. You might need to repeat this process multiple times because some gql containers depend on each other with model definitions.
 
 
+# Postgres multi DB
+Each container connects to its own postgres DB
+
+## Connect to PGAdmin
+    user: root
+    password: root
+    host: postgres_[container_name]
+    port: 5432
+    maintenance database: postgres
+
+## Usage
+Compose the yml file 'docker-compose-pm.yml'
+
+Wait for every container to connect to postgres DB
+
+Make sure that 'apollo' is running
+
+Run 'request_queries.py'
+
+Run 'generate_statistics.py'
+
+## Troubleshoot
+If 'apollo' not running because of a gql container error, remove this container from 'SERVICES' in 'apollo' in 'docker-compose-p.yml' and restart apollo. You might need to repeat this process multiple times because some gql containers depend on each other with model definitions.
 
 
+# Yugabyte
+Creates a 3 node Yugabyte cluster. 'yugabyte-init' initializes the cluster by creating the databese 'data' that each container assumes the existance of. All containers then connect to this cluster. Has it's own GUI at 'localhost:15433'.
 
-# Casovy harmonogram
-9. 10. 2023 zveřejnění harmonogramu prací na projektu (z pohledu programátora), určení repository url (nebo alespoň root např. https://github.com/hrbolek)
-16. 10. 2023 projektový den, Prezentace porozumění projektu, jeho struktura, deskripce entit („live dokumentace v GQL API – Voyager / GraphiQL“)
-27. 11. 2023 projektový den, Prezentace alespoň RU operací
-15. 1. 2024 projektový den, Alfa verze
-21. 1. 2024 uzavření projektu
-22. 1. 2024 počátek zkouškového období,
-?. 3. 2024 konec zkouškového období.
+## Connect to PGAdmin
+    user: yugabyte
+    password: yugabyte
+    host: yugabyte1
+    port: 5433
+    maintenance database: postgres
 
-# Notes
-Notes for getting all containers set up correctly.
+## Usage
+Compose the yml file 'docker-compose-y.yml'
 
-## Postgres
-Use container ip address as host.
+Wait for every container to connect to postgres DB
 
-### Done
-Runs
-can connect to pgadmin
-created database "data"
+Make sure that 'apollo' is running - restart if needed
+
+Run 'request_queries.py'
+
+Run 'generate_statistics.py'
+
+## Troubleshoot
+After you compose the yml file, all containers will try to connect to the cluster at once. Wait for containers to stop or stop them manually and run them one by one by hand. Make sure that each container connects to Yugabyte before starting the next one. You might need to run the containers in the same order as in 'docker-compose-y.yml'.
+
+If 'apollo' not running because of a gql container error, remove this container from 'SERVICES' in 'apollo' in 'docker-compose-y.yml' and restart apollo. You might need to repeat this process multiple times because some gql containers depend on each other with model definitions.
+
+## Handy Yugabyte commands
+Check the cluster status:
+    
+    docker exec -it yugabyte yugabyted status
+
+Open YSQL shell:
+
+    docker exec -it yugabyte1 bash -c '/home/yugabyte/bin/ysqlsh --echo-queries --host yugabyte1'
 
 
+Set cluster replication factor --rf=3:
+
+    docker exec -it yugabyte1 /bin/bash -c './bin/yugabyted configure data_placement --rf=3'
 
 
-## Cockroachdb
+## CockroachDB
+Creates a 3 node Cockroach cluster that runs in insecure mode. Experimental - I was not able to connect uois gql containers to this cluster with the same connection string as Postgres and Yugabyte. By adding few lines of code to 'gql_ug' in 'DBDefinitions/__init__.py/ComposeConnecttionString()' and adding an environmental variable 'IS_COCKROACH', we were able to connect successfully. Has it's own GUI at 'localhost:8080'.
 
-Inabiliity to connect to CockroachDB via asyncpg
-    https://github.com/sqlalchemy/sqlalchemy/issues/6825
+Code change in gql_ug:
+```python
+def ComposeConnectionString():
+    """Odvozuje connectionString z promennych prostredi (nebo z Docker Envs, coz je fakticky totez).
+    Lze predelat na napr. konfiguracni file.
+    """
+    user = os.environ.get("POSTGRES_USER", "postgres")
+    password = os.environ.get("POSTGRES_PASSWORD", "example")
+    database = os.environ.get("POSTGRES_DB", "data")
+    hostWithPort = os.environ.get("POSTGRES_HOST", "localhost:5432")
 
-After running dokcer compose, run: 
+    isCockroach = os.environ.get("IS_COCKROACH", "False")
+    
+    # if statement added to change connection string
+    if isCockroach == "False":
+        driver = "postgresql+asyncpg"  # "postgresql+psycopg2"
+        connectionstring = f"{driver}://{user}:{password}@{hostWithPort}/{database}"
+
+    if isCockroach == "True":
+        driver = "cockroachdb+asyncpg"  # "postgresql+psycopg2"
+        connectionstring = f"{driver}://{user}:{password}@{hostWithPort}/{database}?ssl=disable"
+
+    print(connectionstring)
+
+    return connectionstring
+```
+
+## Connect to PGAdmin
+By default cockroach does not have a password in insecure mode
+
+    user: root
+    password: 
+    host: roach1
+    port: 26257
+    maintenance database: defaultdb
+    in parameters: disable ssl mode
+
+## Usage
+Compose the yml file 'docker-compose-c.yml'
+
+Run a one time init command to initialize the cluster
 
     docker exec -it roach1 ./cockroach --host=roach1:26357 init --insecure
 
-for one-time initialization. Even if you add or remove a node you don't have to run this again as long as the database is running.
+Restart every container (only gql_ug for now) and make sure it connects to the cluster
 
+Restart 'apollo' and make sure it's running
 
-Use 
+Run 'request_queries.py'
+
+Run 'generate_statistics.py'
+
+## Handy Cockroach commands
+Check the startup parameters of the cluster:
 
     docker exec -it roach1 grep 'node starting' cockroach-data/logs/cockroach.log -A 11 
 
-to check the startup parameters of the cluster.
-
-
-
-Use 
-
-    cockroach workload run movr --duration=5m 
-
-in node1 container for a test of the cluster.
-
-
-
-Use
+Open SQL shell (roach1):
 
     docker exec -it roach1 ./cockroach sql --host=roach2:26258 --insecure
 
-for sql queries.
+Test the cluster with a mock workload form 5 minutes. Run in container roach1:
 
+    cockroach workload run movr --duration=5m 
 
-
-To add a node, run: 
+Add a node. Make sure to change --name, --network, "--label com.stack={stack}" (specifies the docker stack), --join correct nodes (containers) in network:
 
     docker run -d \
     --name roach4 \
     --network sql_performance_roachnet \
     -v roach4:/mnt/cockroach/cockroach-data \
     --label com.stack=sql_performance \
-    cockroachdb/cockroach:v23.1.11 start --insecure --join=roach1,roach2,roach3,roach4
+    cockroachdb/cockroach:latest start --insecure --join=roach1,roach2,roach3,roach4
 
-Make sure to change --name, --network, --label specifies the docker stack "--label com.stack={stack}", --join correct nodes (containers) in network
+# request_queries.py
+Script for sending queries (saved in 'gql_queries.json') to the project database through apollo (header set by default in 'send_queries()') and saves their times into a folder. A file will be generated for each container and will be saved in said folder. In 'main()' set number of queries and a name of the folder you want to save them to. 'generate_statistics.py' assumes that each folder will be named 'queries_times_[DB_type_name]'.
 
+# generate_statistics.py
+Scrip for generating statistics from data generated by 'request_queries.py'. In 'main()' edit paths to folders containing files with times. This script generates a 'statistics.docx' file for each folder, containing statistics of times in that folder only. Another file called 'overall_stats.docx' will be generated in root folder, which will hold the overall statistics for all folders. The script assumes that each folder holds times for one DB type and that it's named 'queries_times_[DB_type_name]'.
 
-use container ip or container name as host
-host roach1
-port 26257
-maintenance database defaultdb
-username root
-in parameters disable ssl mode
+# Handy SQL commands to test the DBs
+create database
 
+    CREATE DATABASE data; 
 
+create table
 
-Start SQL shell (roach1):
-    
-    docker exec -it roach1 ./cockroach sql --host=roach2:26258 --insecure
+    CREATE TABLE data.Employees (
+        EmployeeID INT PRIMARY KEY,
+        FirstName VARCHAR(50),
+        LastName VARCHAR(50),
+        Department VARCHAR(50),
+        Salary DECIMAL(10, 2)
+    );
 
+insert data
 
-### Done
-Runs
-Connects to pgadmin (sort of)
+    INSERT INTO Employees (EmployeeID, FirstName, LastName, Department, Salary) 
+    VALUES (1, 'John', 'Doe', 'Sales', 50000.00);
 
+    INSERT INTO Employees (EmployeeID, FirstName, LastName, Department, Salary) 
+    VALUES (2, 'Jane', 'Smith', 'HR', 60000.00);
 
+select data
 
-## yugabyte
+    SELECT * FROM Employees;
 
-Connect to yb-tserver-n1
-Use container ip address as host.
-default name: yugabyte
-default password: yugabyte
-port: 5433:5433
+update data
 
-Check the cluster status:
-    
-    docker exec -it yugabyte yugabyted status
+    UPDATE Employees
+    SET Salary = 55000.00
+    WHERE EmployeeID = 1;
 
-To open YSQL shell:
+delete data
 
-    docker exec -it yugabyte bash -c '/home/yugabyte/bin/ysqlsh --echo-queries --host yugabyte'
-    docker exec -it yugabyte1 bash -c '/home/yugabyte/bin/ysqlsh --echo-queries --host yugabyte1'
+    DELETE FROM Employees
+    WHERE EmployeeID = 2;
 
+filter data
 
-Set replication factor:
-    docker exec -it yugabyte1 /bin/bash -c './bin/yugabyted configure data_placement --rf=3'
+    SELECT * FROM Employees
+    WHERE Department = 'Sales';
 
+aggregate data
 
-### Done
-Runs
-can connect to pgadmin
-communicates with gql evolution
+    SELECT Department, AVG(Salary) as AverageSalary
+    FROM Employees
+    GROUP BY Department;
 
+join tables
 
+    CREATE TABLE Projects (
+        ProjectID INT PRIMARY KEY,
+        ProjectName VARCHAR(50),
+        EmployeeID INT,
+        FOREIGN KEY (EmployeeID) REFERENCES Employees(EmployeeID)
+    );
 
-# test SQL
-## create database
-
-CREATE DATABASE data; 
-
-## create table
-CREATE TABLE data.Employees (
-    EmployeeID INT PRIMARY KEY,
-    FirstName VARCHAR(50),
-    LastName VARCHAR(50),
-    Department VARCHAR(50),
-    Salary DECIMAL(10, 2)
-);
-
-## insert data
-INSERT INTO Employees (EmployeeID, FirstName, LastName, Department, Salary) 
-VALUES (1, 'John', 'Doe', 'Sales', 50000.00);
-
-INSERT INTO Employees (EmployeeID, FirstName, LastName, Department, Salary) 
-VALUES (2, 'Jane', 'Smith', 'HR', 60000.00);
-
-## selecting data
-SELECT * FROM Employees;
-
-## updating data
-UPDATE Employees
-SET Salary = 55000.00
-WHERE EmployeeID = 1;
-
-## deleting data
-DELETE FROM Employees
-WHERE EmployeeID = 2;
-
-## filtering data
-SELECT * FROM Employees
-WHERE Department = 'Sales';
-
-## aggregating data
-SELECT Department, AVG(Salary) as AverageSalary
-FROM Employees
-GROUP BY Department;
-
-## joining tables
-CREATE TABLE Projects (
-    ProjectID INT PRIMARY KEY,
-    ProjectName VARCHAR(50),
-    EmployeeID INT,
-    FOREIGN KEY (EmployeeID) REFERENCES Employees(EmployeeID)
-);
-
-SELECT Employees.FirstName, Employees.LastName, Projects.ProjectName
-FROM Employees
-INNER JOIN Projects
-ON Employees.EmployeeID = Projects.EmployeeID;
+    SELECT Employees.FirstName, Employees.LastName, Projects.ProjectName
+    FROM Employees
+    INNER JOIN Projects
+    ON Employees.EmployeeID = Projects.EmployeeID;
