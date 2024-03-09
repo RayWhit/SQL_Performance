@@ -96,7 +96,7 @@ Set cluster replication factor --rf=3:
     docker exec -it yugabyte1 /bin/bash -c './bin/yugabyted configure data_placement --rf=3'
 
 
-## CockroachDB
+# CockroachDB
 Creates a 3 node CockroachDB cluster that runs in insecure mode. Experimental - I was not able to connect uois gql containers to this cluster with the same connection string as Postgres and Yugabyte. By adding few lines of code to `gql_ug` in `DBDefinitions/__init__.py/ComposeConnecttionString()` and adding an environmental variable `IS_COCKROACH`, we were able to connect successfully. Has it's own GUI at `localhost:8080`.
 
 Code change in gql_ug:
