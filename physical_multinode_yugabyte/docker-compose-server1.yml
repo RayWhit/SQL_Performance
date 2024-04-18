@@ -1,0 +1,11 @@
+services:
+  yugabyte1:
+    image: yugabytedb/yugabyte:2.21.0.0-b545
+    container_name: yugabyte1
+    ports:
+      - "7000:7000"
+      - "9001:9000"   # rebind because of portainer
+      - "15433:15433" # cluster GUI
+      - "5433:5433"
+      - "9042:9042"
+    command: ["bin/yugabyted", "start", "--daemon=false"]

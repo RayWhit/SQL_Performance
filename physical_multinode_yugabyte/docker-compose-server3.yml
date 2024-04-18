@@ -1,0 +1,8 @@
+services:
+  yugabyte3:
+    image: yugabytedb/yugabyte:2.21.0.0-b545
+    container_name: yugabyte3
+    command: ["bin/yugabyted", "start", "--daemon=false", "--join=yugabyte1"]
+    depends_on:
+      - yugabyte1
+    restart: on-failure:10
