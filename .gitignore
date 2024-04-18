@@ -5,3 +5,5 @@ queries_times_postgres_single/
 queries_times_yugabyte/
 
 overall_stats.docx
+
+.vscode
