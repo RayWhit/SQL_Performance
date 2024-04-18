@@ -110,6 +110,7 @@ services:
           {"name": "events", "url": "http://gql_events:8000/gql"},
           {"name": "externalids", "url": "http://gql_externalids:8000/gql"},
           {"name": "granting", "url": "http://gql_granting:8000/gql"},
+          {"name": "workflow", "url": "http://gql_workflow:8000/gql"},
           {"name": "workflows", "url": "http://gql_workflows:8000/gql"},
           {"name": "documents", "url": "http://gql_documents:8000/gql"},
           {"name": "surveys", "url": "http://gql_surveys:8000/gql"}
@@ -121,6 +122,7 @@ services:
       # {"name": "events", "url": "http://gql_events:8000/gql"},
       # {"name": "externalids", "url": "http://gql_externalids:8000/gql"},
       # {"name": "granting", "url": "http://gql_granting:8000/gql"},
+      # {"name": "workflow", "url": "http://gql_workflow:8000/gql"},
       # {"name": "workflows", "url": "http://gql_workflows:8000/gql"},
       # {"name": "documents", "url": "http://gql_documents:8000/gql"},
       # {"name": "surveys", "url": "http://gql_surveys:8000/gql"}
@@ -191,6 +193,7 @@ services:
     environment:
       - DEMO=False
       - GQL_PROXY=http://apollo:3000/api/gql/
+      - SALT=fe1c71b2-74c0-41e5-978f-eecbffac7418    # copied from github.com/hrbolek/_uois
     ports:
       - 33080:8000
 
@@ -644,7 +647,7 @@ services:
 
 
   gql_workflow:
-    image: taido028/gql_workflow:Latest_tag
+    image: taido028/gql_workflow:latest
     container_name: z-gql_workflow_Bui-Do
     # build:
     #   # context definuje cestu k popisu
