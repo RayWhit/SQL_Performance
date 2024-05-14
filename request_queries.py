@@ -45,7 +45,9 @@ def send_queries(num_queries, save_file_path):
     with open('gql_queries.json', 'r') as file:
         graphql_queries = json.load(file)
 
-    gateway_url = "http://localhost:33000/api/gql"
+    gateway_url = "http://localhost:33000/api/gql"    
+    # gateway_url = "http://host.docker.internal:33000/api/gql"
+    
     headers = {
         "Content-Type": "application/json",
         # Add any other headers if necessary
@@ -80,7 +82,7 @@ def send_queries(num_queries, save_file_path):
 
 
 if __name__ == "__main__":
-    num_queries = 1000
+    num_queries = 100
     save_file_path = "./queries_times"
     #save_file_path = "./queries_times_postgres_single"
     #save_file_path = "./queries_times_postgres_multiple"
