@@ -1,3 +1,7 @@
+networks:
+  roachnet:
+    driver: host
+
 services:
   pgadmin:
     container_name: pgadmin4
@@ -6,8 +10,11 @@ services:
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@admin.com
       PGADMIN_DEFAULT_PASSWORD: root
+    networks:
+      driver: host
     ports:
       - "5050:80"
+    
 
   postgres:
     container_name: postgres
@@ -17,9 +24,10 @@ services:
       POSTGRES_USER: root
       POSTGRES_PASSWORD: root
       POSTGRES_DB: data
+    networks:
+      driver: host
     ports:
       - "5432:5432"
-
 
 ############# apollo #######################
   apollo:
@@ -63,6 +71,9 @@ services:
       - gql_publications_a
       - gql_grantinga
 
+    networks:
+      driver: host
+
     ports: #v deploymentu by nebylo zadne mapovani portu
     #   # vnejsi port : port, kde sluzbu poskytuje kontejner
       - 33000:3000
@@ -83,8 +94,13 @@ services:
       - SALT=fe1c71b2-74c0-41e5-978f-eecbffac7418    # copied from github.com/hrbolek/_uois
       - DEMO=False
       - GQL_PROXY=http://apollo:3000/api/gql/
+    
+    networks:
+      driver: host
+    
     ports:
       - 33080:8000
+
     depends_on:
       apollo:
         condition: service_started

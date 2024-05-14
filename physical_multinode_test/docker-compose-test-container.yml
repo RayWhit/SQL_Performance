@@ -1,3 +1,7 @@
+networks:
+  roachnet:
+    driver: host
+
 services:
   gql_ug:
     image: kavic/ug:latest
@@ -25,5 +29,10 @@ services:
       postgres:
         condition: service_started
 
+    networks:
+      driver: host
+
     ports: #v deploymentu by nebylo zadne mapovani portu
       - 31120:8000
+    
+    
