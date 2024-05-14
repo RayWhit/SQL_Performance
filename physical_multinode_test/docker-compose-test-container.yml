@@ -1,5 +1,5 @@
 networks:
-  roachnet:
+  postgres_cluster:
     driver: host
 
 services:
@@ -30,7 +30,7 @@ services:
         condition: service_started
 
     networks:
-      driver: host
+      - postgres_cluster
 
     ports: #v deploymentu by nebylo zadne mapovani portu
       - 31120:8000

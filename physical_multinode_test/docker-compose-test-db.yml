@@ -1,5 +1,5 @@
 networks:
-  roachnet:
+  postgres_cluster:
     driver: host
 
 services:
@@ -11,7 +11,7 @@ services:
       PGADMIN_DEFAULT_EMAIL: admin@admin.com
       PGADMIN_DEFAULT_PASSWORD: root
     networks:
-      driver: host
+      - postgres_cluster
     ports:
       - "5050:80"
     
@@ -25,7 +25,7 @@ services:
       POSTGRES_PASSWORD: root
       POSTGRES_DB: data
     networks:
-      driver: host
+      - postgres_cluster
     ports:
       - "5432:5432"
 
@@ -72,7 +72,7 @@ services:
       - gql_grantinga
 
     networks:
-      driver: host
+      - postgres_cluster
 
     ports: #v deploymentu by nebylo zadne mapovani portu
     #   # vnejsi port : port, kde sluzbu poskytuje kontejner
@@ -96,7 +96,7 @@ services:
       - GQL_PROXY=http://apollo:3000/api/gql/
     
     networks:
-      driver: host
+      - postgres_cluster
     
     ports:
       - 33080:8000
