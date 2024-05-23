@@ -1,7 +1,3 @@
-networks:
-  postgres_cluster:
-    driver: host
-
 services:
   pgadmin:
     container_name: pgadmin4
@@ -10,11 +6,7 @@ services:
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@admin.com
       PGADMIN_DEFAULT_PASSWORD: root
-    networks:
-      - postgres_cluster
-    ports:
-      - "5050:80"
-    
+    network_mode: "host"
 
   postgres:
     container_name: postgres
@@ -24,83 +16,36 @@ services:
       POSTGRES_USER: root
       POSTGRES_PASSWORD: root
       POSTGRES_DB: data
-    networks:
-      - postgres_cluster
-    ports:
-      - "5432:5432"
+    network_mode: "host"
 
-############# apollo #######################
   apollo:
     image: hrbolek/apollo_federation:latest
     container_name: apollo
     environment:
-      # promenne, ktere lze cist v kontejneru
-      - PORT=3000
-      - |
-        SERVICES=
-        [
-          {"name": "ug", "url": "http://gql_ug:8000/gql"},
-        ]
-      # ug has to be part of services
-
+      PORT: 3000
+      SERVICES: '[{"name": "ug", "url": "http://gql_ug:8000/gql"}]'
     healthcheck:
-      # definice, umoznujici provest test, zda je kontejner v poradku (vsimnete si portu a srovnejte s portem v environment)
       interval: 60s
       retries: 3
       start_period: 60s
       timeout: 10s
-    restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
-    
+    restart: on-failure
     depends_on:
       - postgres
-      - gql_events
-      - gql_externalids
-      - gql_facilities
-      - gql_forms
-      - gql_granting
-      - gql_lessons
-      - gql_preferences
-      - gql_projects
-      - gql_surveys
-      - gql_ug
-      # - gql_ug_hrbolek
-      - gql_workflow
-      - gql_workflows
-      - gql_documents
-      - gql_presences
-      - gql_publications_a
-      - gql_grantinga
+    network_mode: "host"
 
-    networks:
-      - postgres_cluster
-
-    ports: #v deploymentu by nebylo zadne mapovani portu
-    #   # vnejsi port : port, kde sluzbu poskytuje kontejner
-      - 33000:3000
-    
-
-######################## frontend ##############################
   frontend:
     image: hrbolek/frontend
     container_name: frontend
     environment:
-      - POSTGRES_USER=root
-      - POSTGRES_PASSWORD=root
-      - POSTGRES_HOST=postgres:5432
-      - POSTGRES_DB=data
-      # - GQLUG_ENDPOINT_URL=http://gql_ug:8000/gql
-      # - JWTPUBLICKEYURL=http://frontend:8000/oauth/publickey
-      # - JWTRESOLVEUSERPATHURL=http://frontend:8000/oauth/userinfo
-      - SALT=fe1c71b2-74c0-41e5-978f-eecbffac7418    # copied from github.com/hrbolek/_uois
-      - DEMO=False
-      - GQL_PROXY=http://apollo:3000/api/gql/
-    
-    networks:
-      - postgres_cluster
-    
-    ports:
-      - 33080:8000
-
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      POSTGRES_HOST: postgres
+      POSTGRES_DB: data
+      SALT: fe1c71b2-74c0-41e5-978f-eecbffac7418
+      DEMO: "False"
+      GQL_PROXY: http://apollo:3000/api/gql/
+    network_mode: "host"
     depends_on:
       apollo:
         condition: service_started
