@@ -1,6 +1,6 @@
-networks:
-  postgres_cluster:
-    driver: host
+# networks:
+#   postgres_cluster:
+#     driver: host
 
 services:
   gql_ug:
@@ -10,7 +10,9 @@ services:
       # promenne, ktere lze cist v kontejneru
       - POSTGRES_USER=root
       - POSTGRES_PASSWORD=root
-      - POSTGRES_HOST=postgres:5432
+      # link to db out of stack
+      - POSTGRES_HOST=host.docker.internal:5432
+      # - POSTGRES_HOST=postgres:5432
       - POSTGRES_DB=data
       - GQLUG_ENDPOINT_URL=http://gql_ug:8000/gql
       - JWTPUBLICKEYURL=http://frontend:8000/oauth/publickey
@@ -25,12 +27,7 @@ services:
       timeout: 10s
     restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
 
-    depends_on:
-      postgres:
-        condition: service_started
-
-    networks:
-      - postgres_cluster
+    network_mode: "host"
 
     ports: #v deploymentu by nebylo zadne mapovani portu
       - 31120:8000
