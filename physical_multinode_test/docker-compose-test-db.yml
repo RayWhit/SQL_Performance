@@ -18,22 +18,6 @@ services:
       POSTGRES_DB: data
     network_mode: "host"
 
-  apollo:
-    image: hrbolek/apollo_federation:latest
-    container_name: apollo
-    environment:
-      PORT: 3000
-      SERVICES: '[{"name": "ug", "url": "http://gql_ug:8000/gql"}]'
-    healthcheck:
-      interval: 60s
-      retries: 3
-      start_period: 60s
-      timeout: 10s
-    restart: on-failure
-    depends_on:
-      - postgres
-    network_mode: "host"
-
   frontend:
     image: hrbolek/frontend
     container_name: frontend

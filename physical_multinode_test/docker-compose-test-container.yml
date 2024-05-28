@@ -3,6 +3,20 @@
 #     driver: host
 
 services:
+  apollo:
+    image: hrbolek/apollo_federation:latest
+    container_name: apollo
+    environment:
+      PORT: 3000
+      SERVICES: '[{"name": "ug", "url": "http://localhost:31120/gql"}]'
+    healthcheck:
+      interval: 60s
+      retries: 3
+      start_period: 60s
+      timeout: 10s
+    restart: on-failure
+    network_mode: "host"
+
   gql_ug:
     image: kavic/ug:latest
     container_name: z-gql_ug_Holik-Kava
@@ -10,25 +24,21 @@ services:
       # promenne, ktere lze cist v kontejneru
       - POSTGRES_USER=root
       - POSTGRES_PASSWORD=root
-      # link to db out of stack
-      - POSTGRES_HOST=host.docker.internal:5432
+      - POSTGRES_HOST=160.216.228.180:5432   # link to db out of stack
       # - POSTGRES_HOST=postgres:5432
       - POSTGRES_DB=data
-      - GQLUG_ENDPOINT_URL=http://gql_ug:8000/gql
-      - JWTPUBLICKEYURL=http://frontend:8000/oauth/publickey
-      - JWTRESOLVEUSERPATHURL=http://frontend:8000/oauth/userinfo
+      #- GQLUG_ENDPOINT_URL=http://gql_ug:8000/gql
+      #- JWTPUBLICKEYURL=http://frontend:8000/oauth/publickey
+      #- JWTRESOLVEUSERPATHURL=http://frontend:8000/oauth/userinfo
       - DEMO=True
     healthcheck:
       # definice, umoznujici provest test, zda je kontejner v poradku
-      test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
+      test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:31120/gql/ || exit 1"
       interval: 20s
       retries: 10
       start_period: 20s
       timeout: 10s
     restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
-
-    network_mode: "host"
-
     ports: #v deploymentu by nebylo zadne mapovani portu
       - 31120:8000
     
