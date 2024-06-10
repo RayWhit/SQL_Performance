@@ -26,7 +26,7 @@ services:
       retries: 3
       start_period: 60s
       timeout: 10s
-    restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+    restart: on-failure:5 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
     depends_on:
       - gql_events
       - gql_externalids
@@ -56,10 +56,10 @@ services:
       POSTGRES_PASSWORD: root
       POSTGRES_HOST: 192.168.56.104:5432
       POSTGRES_DB: data
-      # GQLUG_ENDPOINT_URL: http://gql_ug:8000/gql
+      GQLUG_ENDPOINT_URL: http://gql_ug:8000/gql
       # JWTPUBLICKEYURL: http://frontend:8000/oauth/publickey
       # JWTRESOLVEUSERPATHURL: http://frontend:8000/oauth/userinfo
-      DEMO: True
+      DEMO: "True"
     healthcheck:
       # definice, umoznujici provest test, zda je kontejner v poradku
       test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
@@ -67,7 +67,7 @@ services:
       retries: 10
       start_period: 20s
       timeout: 10s
-    restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+    restart: on-failure:5 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
     ports: #v deploymentu by nebylo zadne mapovani portu
       - 31000:8000  # ray made up this port number
 
@@ -80,10 +80,10 @@ services:
       POSTGRES_PASSWORD: root
       POSTGRES_HOST: 192.168.56.104:5432
       POSTGRES_DB: data
-      # GQLUG_ENDPOINT_URL: http://gql_ug:8000/gql
+      GQLUG_ENDPOINT_URL: http://gql_ug:8000/gql
       # JWTPUBLICKEYURL: http://frontend:8000/oauth/publickey
       # JWTRESOLVEUSERPATHURL: http://frontend:8000/oauth/userinfo
-      DEMO: True
+      DEMO: "True"
     healthcheck:
       # definice, umoznujici provest test, zda je kontejner v poradku
       test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
@@ -91,7 +91,7 @@ services:
       retries: 10
       start_period: 20s
       timeout: 10s
-    restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+    restart: on-failure:5 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
     depends_on:
       gql_ug:
         condition: service_started
@@ -111,10 +111,10 @@ services:
       POSTGRES_PASSWORD: root
       POSTGRES_HOST: 192.168.56.104:5432
       POSTGRES_DB: data
-      # GQLUG_ENDPOINT_URL: http://gql_ug:8000/gql
+      GQLUG_ENDPOINT_URL: http://gql_ug:8000/gql
       # JWTPUBLICKEYURL: http://frontend:8000/oauth/publickey
       # JWTRESOLVEUSERPATHURL: http://frontend:8000/oauth/userinfo
-      DEMO: True
+      DEMO: "True"
     healthcheck:
       # definice, umoznujici provest test, zda je kontejner v poradku
       test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
@@ -122,7 +122,7 @@ services:
       retries: 10
       start_period: 20s
       timeout: 10s
-    restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+    restart: on-failure:5 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
     depends_on:
       gql_ug:
         condition: service_started
@@ -138,10 +138,10 @@ services:
       POSTGRES_PASSWORD: root
       POSTGRES_HOST: 192.168.56.104:5432
       POSTGRES_DB: data
-      # GQLUG_ENDPOINT_URL: http://gql_ug:8000/gql
+      GQLUG_ENDPOINT_URL: http://gql_ug:8000/gql
       # JWTPUBLICKEYURL: http://frontend:8000/oauth/publickey
       # JWTRESOLVEUSERPATHURL: http://frontend:8000/oauth/userinfo
-      DEMO: True
+      DEMO: "True"
     healthcheck:
       # definice, umoznujici provest test, zda je kontejner v poradku
       test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
@@ -149,7 +149,7 @@ services:
       retries: 10
       start_period: 60s
       timeout: 10s
-    restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+    restart: on-failure:5 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
     depends_on:
       gql_ug:
         condition: service_started
@@ -165,10 +165,10 @@ services:
       POSTGRES_PASSWORD: root
       POSTGRES_HOST: 192.168.56.104:5432
       POSTGRES_DB: data
-      # GQLUG_ENDPOINT_URL: http://gql_ug:8000/gql
-      # JWTPUBLICKEYURL: http://frontend:8000/oauth/publickey
-      # JWTRESOLVEUSERPATHURL: http://frontend:8000/oauth/userinfo
-      DEMO: True
+      GQLUG_ENDPOINT_URL: http://gql_ug:8000/gql
+      JWTPUBLICKEYURL: http://192.168.56.104:8000/oauth/publickey
+      JWTRESOLVEUSERPATHURL: http://192.168.56.104:8000/oauth/userinfo
+      DEMO: "True"
     healthcheck:
       # definice, umoznujici provest test, zda je kontejner v poradku
       test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
@@ -176,7 +176,7 @@ services:
       retries: 10
       start_period: 60s
       timeout: 10s
-    restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+    restart: on-failure:5 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
     depends_on:
       gql_ug:
         condition: service_started
@@ -192,10 +192,10 @@ services:
       POSTGRES_PASSWORD: root
       POSTGRES_HOST: 192.168.56.104:5432
       POSTGRES_DB: data
-      # GQLUG_ENDPOINT_URL: http://gql_ug:8000/gql
+      GQLUG_ENDPOINT_URL: http://gql_ug:8000/gql
       # JWTPUBLICKEYURL: http://frontend:8000/oauth/publickey
       # JWTRESOLVEUSERPATHURL: http://frontend:8000/oauth/userinfo
-      DEMO: True
+      DEMO: "True"
     healthcheck:
       # definice, umoznujici provest test, zda je kontejner v poradku
       test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
@@ -203,7 +203,7 @@ services:
       retries: 10
       start_period: 30s
       timeout: 10s
-    restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+    restart: on-failure:5 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
     depends_on:
       gql_ug:
         condition: service_started
@@ -225,10 +225,10 @@ services:
       POSTGRES_PASSWORD: root
       POSTGRES_HOST: 192.168.56.104:5432
       POSTGRES_DB: data
-      # GQLUG_ENDPOINT_URL: http://gql_ug:8000/gql
+      GQLUG_ENDPOINT_URL: http://gql_ug:8000/gql
       # JWTPUBLICKEYURL: http://frontend:8000/oauth/publickey
       # JWTRESOLVEUSERPATHURL: http://frontend:8000/oauth/userinfo
-      DEMO: True
+      DEMO: "True"
     healthcheck:
       # definice, umoznujici provest test, zda je kontejner v poradku
       test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
@@ -236,7 +236,7 @@ services:
       retries: 10
       start_period: 20s
       timeout: 10s
-    restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+    restart: on-failure:5 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
     depends_on:
       gql_ug:
         condition: service_started
@@ -260,10 +260,10 @@ services:
       POSTGRES_PASSWORD: root
       POSTGRES_HOST: 192.168.56.104:5432
       POSTGRES_DB: data
-      # GQLUG_ENDPOINT_URL: http://gql_ug:8000/gql
+      GQLUG_ENDPOINT_URL: http://gql_ug:8000/gql
       # JWTPUBLICKEYURL: http://frontend:8000/oauth/publickey
       # JWTRESOLVEUSERPATHURL: http://frontend:8000/oauth/userinfo
-      DEMO: True
+      DEMO: "True"
     healthcheck:
       # definice, umoznujici provest test, zda je kontejner v poradku
       test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
@@ -271,7 +271,7 @@ services:
       retries: 10
       start_period: 20s
       timeout: 10s
-    restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+    restart: on-failure:5 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
     depends_on:
       gql_ug:
         condition: service_started
@@ -297,10 +297,10 @@ services:
       POSTGRES_PASSWORD: root
       POSTGRES_HOST: 192.168.56.104:5432
       POSTGRES_DB: data
-      # GQLUG_ENDPOINT_URL: http://gql_ug:8000/gql
+      GQLUG_ENDPOINT_URL: http://gql_ug:8000/gql
       # JWTPUBLICKEYURL: http://frontend:8000/oauth/publickey
       # JWTRESOLVEUSERPATHURL: http://frontend:8000/oauth/userinfo
-      DEMO: True
+      DEMO: "True"
     healthcheck:
       # definice, umoznujici provest test, zda je kontejner v poradku
       test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
@@ -308,7 +308,7 @@ services:
       retries: 10
       start_period: 20s
       timeout: 10s
-    restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+    restart: on-failure:5 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
     depends_on:
       gql_ug:
         condition: service_started
@@ -336,10 +336,10 @@ services:
       POSTGRES_PASSWORD: root
       POSTGRES_HOST: 192.168.56.104:5432
       POSTGRES_DB: data
-      # GQLUG_ENDPOINT_URL: http://gql_ug:8000/gql
+      GQLUG_ENDPOINT_URL: http://gql_ug:8000/gql
       # JWTPUBLICKEYURL: http://frontend:8000/oauth/publickey
       # JWTRESOLVEUSERPATHURL: http://frontend:8000/oauth/userinfo
-      DEMO: True
+      DEMO: "True"
     healthcheck:
       # definice, umoznujici provest test, zda je kontejner v poradku
       test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
@@ -347,7 +347,7 @@ services:
       retries: 10
       start_period: 20s
       timeout: 10s
-    restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+    restart: on-failure:5 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
     depends_on:
       gql_ug:
         condition: service_started
@@ -377,10 +377,10 @@ services:
       POSTGRES_PASSWORD: root
       POSTGRES_HOST: 192.168.56.104:5432
       POSTGRES_DB: data
-      # GQLUG_ENDPOINT_URL: http://gql_ug:8000/gql
+      GQLUG_ENDPOINT_URL: http://gql_ug:8000/gql
       # JWTPUBLICKEYURL: http://frontend:8000/oauth/publickey
       # JWTRESOLVEUSERPATHURL: http://frontend:8000/oauth/userinfo
-      DEMO: True
+      DEMO: "True"
     healthcheck:
       # definice, umoznujici provest test, zda je kontejner v poradku
       test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
@@ -388,7 +388,7 @@ services:
       retries: 10
       start_period: 20s
       timeout: 10s
-    restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+    restart: on-failure:5 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
     depends_on:
       gql_ug:
         condition: service_started
@@ -420,10 +420,10 @@ services:
       POSTGRES_PASSWORD: root
       POSTGRES_HOST: 192.168.56.104:5432
       POSTGRES_DB: data
-      # GQLUG_ENDPOINT_URL: http://gql_ug:8000/gql
+      GQLUG_ENDPOINT_URL: http://gql_ug:8000/gql
       # JWTPUBLICKEYURL: http://frontend:8000/oauth/publickey
       # JWTRESOLVEUSERPATHURL: http://frontend:8000/oauth/userinfo
-      DEMO: True
+      DEMO: "True"
     healthcheck:
       # definice, umoznujici provest test, zda je kontejner v poradku
       test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
@@ -431,7 +431,7 @@ services:
       retries: 10
       start_period: 20s
       timeout: 10s
-    restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+    restart: on-failure:5 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
     depends_on:
       gql_ug:
         condition: service_started
@@ -465,10 +465,10 @@ services:
       POSTGRES_PASSWORD: root
       POSTGRES_HOST: 192.168.56.104:5432
       POSTGRES_DB: data
-      # GQLUG_ENDPOINT_URL: http://gql_ug:8000/gql
+      GQLUG_ENDPOINT_URL: http://gql_ug:8000/gql
       # JWTPUBLICKEYURL: http://frontend:8000/oauth/publickey
       # JWTRESOLVEUSERPATHURL: http://frontend:8000/oauth/userinfo
-      DEMO: True
+      DEMO: "True"
     healthcheck:
       # definice, umoznujici provest test, zda je kontejner v poradku
       test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
@@ -476,7 +476,7 @@ services:
       retries: 10
       start_period: 20s
       timeout: 10s
-    restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+    restart: on-failure:5 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
     depends_on:
       gql_ug:
         condition: service_started
@@ -512,10 +512,10 @@ services:
       POSTGRES_PASSWORD: root
       POSTGRES_HOST: 192.168.56.104:5432
       POSTGRES_DB: data
-      # GQLUG_ENDPOINT_URL: http://gql_ug:8000/gql
+      GQLUG_ENDPOINT_URL: http://gql_ug:8000/gql
       # JWTPUBLICKEYURL: http://frontend:8000/oauth/publickey
       # JWTRESOLVEUSERPATHURL: http://frontend:8000/oauth/userinfo
-      DEMO: True
+      DEMO: "True"
     healthcheck:
       # definice, umoznujici provest test, zda je kontejner v poradku
       test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
@@ -523,7 +523,7 @@ services:
       retries: 10
       start_period: 20s
       timeout: 10s
-    restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+    restart: on-failure:5 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
     depends_on:
       gql_ug:
         condition: service_started
@@ -561,10 +561,10 @@ services:
       POSTGRES_PASSWORD: root
       POSTGRES_HOST: 192.168.56.104:5432
       POSTGRES_DB: data
-      # GQLUG_ENDPOINT_URL: http://gql_ug:8000/gql
+      GQLUG_ENDPOINT_URL: http://gql_ug:8000/gql
       # JWTPUBLICKEYURL: http://frontend:8000/oauth/publickey
       # JWTRESOLVEUSERPATHURL: http://frontend:8000/oauth/userinfo
-      DEMO: True
+      DEMO: "True"
     healthcheck:
       # definice, umoznujici provest test, zda je kontejner v poradku
       test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
@@ -572,7 +572,7 @@ services:
       retries: 10
       start_period: 20s
       timeout: 10s
-    restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy 
+    restart: on-failure:5 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy 
     depends_on:
       gql_ug:
         condition: service_started
@@ -612,10 +612,10 @@ services:
       POSTGRES_PASSWORD: root
       POSTGRES_HOST: 192.168.56.104:5432
       POSTGRES_DB: data
-      # GQLUG_ENDPOINT_URL: http://gql_ug:8000/gql
+      GQLUG_ENDPOINT_URL: http://gql_ug:8000/gql
       # JWTPUBLICKEYURL: http://frontend:8000/oauth/publickey
       # JWTRESOLVEUSERPATHURL: http://frontend:8000/oauth/userinfo
-      DEMO: True
+      DEMO: "True"
     healthcheck:
       # definice, umoznujici provest test, zda je kontejner v poradku
       test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
@@ -623,7 +623,7 @@ services:
       retries: 10
       start_period: 20s
       timeout: 10s
-    restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+    restart: on-failure:5 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
     depends_on:
       gql_ug:
         condition: service_started
@@ -665,10 +665,10 @@ services:
       POSTGRES_PASSWORD: root
       POSTGRES_HOST: 192.168.56.104:5432
       POSTGRES_DB: data
-      # GQLUG_ENDPOINT_URL: http://gql_ug:8000/gql
+      GQLUG_ENDPOINT_URL: http://gql_ug:8000/gql
       # JWTPUBLICKEYURL: http://frontend:8000/oauth/publickey
       # JWTRESOLVEUSERPATHURL: http://frontend:8000/oauth/userinfo
-      DEMO: True
+      DEMO: "True"
     healthcheck:
       # definice, umoznujici provest test, zda je kontejner v poradku
       test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
@@ -676,7 +676,7 @@ services:
       retries: 10
       start_period: 20s
       timeout: 10s
-    restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+    restart: on-failure:5 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
     depends_on:
       gql_ug:
         condition: service_started
