@@ -30,6 +30,3 @@ services:
       DEMO: "False"
       GQL_PROXY: http://apollo:3000/api/gql/
     network_mode: "host"
-    depends_on:
-      apollo:
-        condition: service_started
