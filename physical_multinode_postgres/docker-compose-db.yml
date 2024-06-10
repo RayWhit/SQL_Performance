@@ -6,8 +6,7 @@ services:
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@admin.com
       PGADMIN_DEFAULT_PASSWORD: root
-    ports:
-      - "5050:80"
+    network_mode: "host"
 
   postgres:
     container_name: postgres
@@ -17,119 +16,21 @@ services:
       POSTGRES_USER: root
       POSTGRES_PASSWORD: root
       POSTGRES_DB: data
-    ports:
-      - "5432:5432"
-
-
-############# apollo #######################
-  apollo:
-    image: hrbolek/apollo_federation:latest
-    container_name: apollo
-    environment:
-      # promenne, ktere lze cist v kontejneru
-      - PORT=3000
-      - |
-        SERVICES=
-        [
-          {"name": "ug", "url": "http://gql_ug:8000/gql"},
-          {"name": "forms", "url": "http://gql_forms:8000/gql"},
-          {"name": "facilities", "url": "http://gql_facilities_hrbolek:8000/gql"},
-          {"name": "events", "url": "http://gql_events:8000/gql"},
-          {"name": "granting", "url": "http://gql_granting:8000/gql"},
-          {"name": "lessons", "url": "http://gql_lessons:8000/gql"},  
-          {"name": "projects", "url": "http://gql_projects:8000/gql"},
-          {"name": "workflow", "url": "http://gql_workflow:8000/gql"},
-          {"name": "workflows", "url": "http://gql_workflows:8000/gql"},
-          {"name": "documents", "url": "http://gql_documents:8000/gql"},
-          {"name": "presences", "url": "http://gql_presences:8000/gql"},
-          {"name": "surveys", "url": "http://gql_surveys:8000/gql"}
-        ]
-      # ug has to be part of services
-
-      ##### working in apollo ######
-      # {"name": "ug", "url": "http://gql_ug:8000/gql"},
-      # {"name": "forms", "url": "http://gql_forms:8000/gql"},
-      # {"name": "events", "url": "http://gql_events:8000/gql"},
-      # {"name": "externalids", "url": "http://gql_externalids:8000/gql"},
-      # {"name": "granting", "url": "http://gql_granting:8000/gql"},
-      # {"name": "projects", "url": "http://gql_projects:8000/gql"},
-      # {"name": "workflow", "url": "http://gql_workflow:8000/gql"},
-      # {"name": "workflows", "url": "http://gql_workflows:8000/gql"},
-      # {"name": "documents", "url": "http://gql_documents:8000/gql"},
-      # {"name": "presences", "url": "http://gql_presences:8000/gql"},
-      # {"name": "surveys", "url": "http://gql_surveys:8000/gql"}
-
-
-      ##### all services ######
-      # {"name": "ug", "url": "http://gql_ug_hrbolek:8000/gql"},
-      # {"name": "ug", "url": "http://gql_ug:8000/gql"},
-      # {"name": "forms", "url": "http://gql_forms:8000/gql"},
-      # {"name": "facilities", "url": "http://gql_facilities:8000/gql"},  # Unexpected description in apollo
-      # {"name": "facilities", "url": "http://gql_facilities_hrbolek:8000/gql"},  # hrbolek's container
-      # {"name": "events", "url": "http://gql_events:8000/gql"},
-      # {"name": "externalids", "url": "http://gql_externalids:8000/gql"},  # [externalids] Type "PublicationGQLModel" is an extension type
-      # {"name": "granting", "url": "http://gql_granting:8000/gql"},  # not compatible with grantinga (Tran), but works
-      # {"name": "lessons", "url": "http://gql_lessons:8000/gql"},
-      # {"name": "projects", "url": "http://gql_projects:8000/gql"},
-      # {"name": "workflow", "url": "http://gql_workflow:8000/gql"},
-      # {"name": "workflows", "url": "http://gql_workflows:8000/gql"},
-      # {"name": "documents", "url": "http://gql_documents:8000/gql"},
-      # {"name": "presences", "url": "http://gql_presences:8000/gql"},
-      # {"name": "publications_a", "url": "http://gql_publications_a:8000/gql"},  # ... but type "ID!" in subgraph "publications_a"
-      # {"name": "grantinga", "url": "http://gql_grantinga:8000/gql"},  # not compatible with granting (Klement), but works
-      # {"name": "preferences", "url": "http://gql_preferences:8000/gql"},  # cannot find field "RBACObjectGQLModel.roles"
-      # {"name": "surveys", "url": "http://gql_surveys:8000/gql"}
-
-    healthcheck:
-      # definice, umoznujici provest test, zda je kontejner v poradku (vsimnete si portu a srovnejte s portem v environment)
-      interval: 60s
-      retries: 3
-      start_period: 60s
-      timeout: 10s
-    restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
-    
-    depends_on:
-      - postgres
-      - gql_events
-      - gql_externalids
-      - gql_facilities
-      - gql_forms
-      - gql_granting
-      - gql_lessons
-      - gql_preferences
-      - gql_projects
-      - gql_surveys
-      - gql_ug
-      # - gql_ug_hrbolek
-      - gql_workflow
-      - gql_workflows
-      - gql_documents
-      - gql_presences
-      - gql_publications_a
-      - gql_grantinga
-
-    ports: #v deploymentu by nebylo zadne mapovani portu
-    #   # vnejsi port : port, kde sluzbu poskytuje kontejner
-      - 33000:3000
-    
+    network_mode: "host"
 
 ######################## frontend ##############################
   frontend:
     image: hrbolek/frontend
     container_name: frontend
     environment:
-      - POSTGRES_USER=root
-      - POSTGRES_PASSWORD=root
-      - POSTGRES_HOST=postgres:5432
-      - POSTGRES_DB=data
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      POSTGRES_HOST: postgres
+      POSTGRES_DB: data
       # - GQLUG_ENDPOINT_URL=http://gql_ug:8000/gql
       # - JWTPUBLICKEYURL=http://frontend:8000/oauth/publickey
       # - JWTRESOLVEUSERPATHURL=http://frontend:8000/oauth/userinfo
-      - SALT=fe1c71b2-74c0-41e5-978f-eecbffac7418    # copied from github.com/hrbolek/_uois
-      - DEMO=False
-      - GQL_PROXY=http://apollo:3000/api/gql/
-    ports:
-      - 33080:8000
-    depends_on:
-      apollo:
-        condition: service_started
+      SALT: fe1c71b2-74c0-41e5-978f-eecbffac7418
+      DEMO: "False"
+      GQL_PROXY: http://apollo:3000/api/gql/
+    network_mode: "host"
