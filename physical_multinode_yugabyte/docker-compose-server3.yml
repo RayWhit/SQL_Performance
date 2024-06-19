@@ -2,7 +2,17 @@ services:
   yugabyte3:
     image: yugabytedb/yugabyte:2.21.0.0-b545
     container_name: yugabyte3
-    command: ["bin/yugabyted", "start", "--daemon=false", "--join=yugabyte1"]
-    depends_on:
-      - yugabyte1
-    restart: on-failure:10
+    command: ["bin/yugabyted", "start", "--daemon=false", "--join=192.168.1.101:7100"] # IP of Node 1
+    ports:
+      - "7000:7000"
+      - "7100:7100"
+      - "9000:9000"
+      - "9042:9042"
+      - "5433:5433"
+      - "6379:6379"
+    networks:
+      - yugabyte-network
+
+networks:
+  yugabyte-network:
+    driver: bridge
