@@ -2,17 +2,6 @@ services:
   yugabyte1:
     image: yugabytedb/yugabyte:2.21.0.0-b545
     container_name: yugabyte1
-    command: ["bin/yugabyted", "start", "--daemon=false"]
-    ports:
-      - "7000:7000"
-      - "7100:7100"
-      - "9000:9000"
-      - "9042:9042"
-      - "5433:5433"
-      - "6379:6379"
-    networks:
-      - yugabyte-network
-
-networks:
-  yugabyte-network:
-    driver: bridge
+    command: ["bin/yugabyted", "start", "--daemon=false", "--rpc_bind_addresses=192.168.1.101:7100", "--server_broadcast_addresses=192.168.1.101:7100", "--webserver_interface=192.168.1.101", "--tserver_master_addrs=192.168.1.101:7100"]
+    network_mode: "host"
+    restart: unless-stopped
