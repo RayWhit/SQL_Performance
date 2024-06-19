@@ -1,0 +1,56 @@
+services:
+  pgadmin:
+    container_name: pgadmin4
+    image: "dpage/pgadmin4:7.8"
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: root
+
+############# apollo #######################
+  apollo:
+    image: hrbolek/apollo_federation:latest
+    container_name: apollo
+    environment:
+      PORT: 3000
+      SERVICES: '[{"name": "ug", "url": "http://localhost:31120/gql"}]'
+    healthcheck:
+      interval: 60s
+      retries: 3
+      start_period: 60s
+      timeout: 10s
+    restart: on-failure
+    network_mode: "host"
+
+######################## frontend ##############################
+  frontend:
+    image: hrbolek/frontend
+    container_name: frontend
+    environment:
+      - DEMO=False
+      - GQL_PROXY=http://apollo:3000/api/gql/
+      - SALT=fe1c71b2-74c0-41e5-978f-eecbffac7418    # copied from github.com/hrbolek/_uois
+    ports:
+      - 33080:8000
+    depends_on:
+      apollo:
+        condition: service_started  
+
+  gql_ug:
+    image: kavic/ug:latest
+    container_name: z-gql_ug_Holik-Kava
+    environment:
+      # promenne, ktere lze cist v kontejneru
+      POSTGRES_USER: yugabyte
+      POSTGRES_PASSWORD: yugabyte
+      POSTGRES_HOST: 192.168.56.104:5433
+      POSTGRES_DB: data
+      DEMO: "True"
+    healthcheck:
+      # definice, umoznujici provest test, zda je kontejner v poradku
+      test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
+      interval: 20s
+      retries: 10
+      start_period: 20s
+      timeout: 10s
+    restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
