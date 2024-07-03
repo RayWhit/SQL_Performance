@@ -7,5 +7,7 @@ queries_times_yugabyte/
 overall_stats.docx
 
 .vscode
+.venv
+
 docker-compose-kavic.yml
 docker-compose-c-secure.yml
