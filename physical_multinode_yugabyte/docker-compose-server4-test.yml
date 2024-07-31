@@ -53,4 +53,4 @@ services:
       retries: 10
       start_period: 20s
       timeout: 10s
-    restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+    restart: on-failure:3 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy

@@ -1,0 +1,21 @@
+services:
+  ############## yugabyte ######################
+  yugabyte1:
+    image: yugabytedb/yugabyte:2.20.1.3-b3
+    container_name: yugabyte1
+    ports:
+      - "7000:7000"
+      - "9001:9000"   # rebind because of portainer
+      - "15433:15433" # cluster GUI
+      - "5433:5433"   # connection port as for postgres
+      - "9042:9042"
+    command: ["bin/yugabyted", "start", "--daemon=false"]
+
+  # creates database "data" after yugabyte nodes start
+  yugabyte-init:
+    image: yugabytedb/yugabyte:2.20.1.3-b3
+    container_name: yugabyte-init
+    depends_on:
+      - yugabyte1
+    entrypoint: /bin/sh
+    command: -c "sleep 20 && /home/yugabyte/bin/ysqlsh --echo-queries --host yugabyte1 -U postgres -d postgres -c 'CREATE DATABASE data;'"

@@ -14,7 +14,6 @@ services:
       timeout: 10s
     restart: on-failure:3 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
     depends_on:
-      - yugabyte1
       - gql_ug
     ports: #v deploymentu by nebylo zadne mapovani portu
       - 33000:3000
@@ -40,10 +39,5 @@ services:
       start_period: 20s
       timeout: 10s
     restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
-    depends_on:
-      yugabyte1:
-        condition: service_started
-      yugabyte-init:
-        condition: service_completed_successfully
     ports: #v deploymentu by nebylo zadne mapovani portu
       - 31120:8000
