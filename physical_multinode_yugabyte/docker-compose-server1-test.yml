@@ -1,27 +1,71 @@
 services:
+  ############## yugabyte ######################
   yugabyte1:
-    image: yugabytedb/yugabyte:2.21.0.0-b545
+    image: yugabytedb/yugabyte:2.20.1.3-b3
     container_name: yugabyte1
+    ports:
+      - "7000:7000"
+      - "9001:9000"   # rebind because of portainer
+      - "15433:15433" # cluster GUI
+      - "5433:5433"   # connection port as for postgres
+      - "9042:9042"
     command: ["bin/yugabyted", "start", "--daemon=false"]
-  
-  yugabyte2:
-    image: yugabytedb/yugabyte:2.21.0.0-b545
-    container_name: yugabyte2    
-    command: ["bin/yugabyted", "start", "--daemon=false", "--join=yugabyte1"]
-    restart: on-failure:10
 
-  yugabyte3:
-    image: yugabytedb/yugabyte:2.21.0.0-b545
-    container_name: yugabyte3
-    command: ["bin/yugabyted", "start", "--daemon=false", "--join=yugabyte1"]
-    restart: on-failure:10
-
+  # creates database "data" after yugabyte nodes start
   yugabyte-init:
     image: yugabytedb/yugabyte:2.20.1.3-b3
     container_name: yugabyte-init
     depends_on:
       - yugabyte1
-      - yugabyte2
-      - yugabyte3
     entrypoint: /bin/sh
     command: -c "sleep 20 && /home/yugabyte/bin/ysqlsh --echo-queries --host yugabyte1 -U postgres -d postgres -c 'CREATE DATABASE data;'"
+
+############# apollo #######################
+  # apollo:
+  #   image: hrbolek/apollo_federation:latest
+  #   container_name: apollo
+  #   environment:
+  #     # promenne, ktere lze cist v kontejneru
+  #     PORT: 3000
+  #     SERVICES: '[{"name": "ug", "url": "http://gql_ug:8000/gql"}]'
+  #   healthcheck:
+  #     # definice, umoznujici provest test, zda je kontejner v poradku (vsimnete si portu a srovnejte s portem v environment)
+  #     interval: 60s
+  #     retries: 3
+  #     start_period: 60s
+  #     timeout: 10s
+  #   restart: on-failure:3 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+  #   depends_on:
+  #     - yugabyte1
+  #     - gql_ug
+  #   ports: #v deploymentu by nebylo zadne mapovani portu
+  #     - 33000:3000
+
+  # gql_ug:
+  #   image: kavic/ug:latest
+  #   container_name: z-gql_ug_Holik-Kava
+  #   environment:
+  #     # promenne, ktere lze cist v kontejneru
+  #     - POSTGRES_USER=yugabyte
+  #     - POSTGRES_PASSWORD=yugabyte
+  #     - POSTGRES_HOST=yugabyte1:5433
+  #     - POSTGRES_DB=data
+  #     - GQLUG_ENDPOINT_URL=http://gql_ug:8000/gql
+  #     - JWTPUBLICKEYURL=http://frontend:8000/oauth/publickey
+  #     - JWTRESOLVEUSERPATHURL=http://frontend:8000/oauth/userinfo
+  #     - DEMO=True
+  #   healthcheck:
+  #     # definice, umoznujici provest test, zda je kontejner v poradku
+  #     test: "curl -f -H 'Content-Type: application/json' -X POST -d '{\"query\":\"query{__schema{types{name}}}\"}' http://localhost:8000/gql/ || exit 1"
+  #     interval: 20s
+  #     retries: 10
+  #     start_period: 20s
+  #     timeout: 10s
+  #   restart: on-failure:30 # nedojde k restartu pokud je kontejner "unhealthy", maximalne 3 pokusy
+  #   depends_on:
+  #     yugabyte1:
+  #       condition: service_started
+  #     yugabyte-init:
+  #       condition: service_completed_successfully
+  #   ports: #v deploymentu by nebylo zadne mapovani portu
+  #     - 31120:8000
