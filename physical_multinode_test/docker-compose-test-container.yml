@@ -8,14 +8,16 @@ services:
     container_name: apollo
     environment:
       PORT: 3000
-      SERVICES: '[{"name": "ug", "url": "http://localhost:31120/gql"}]'
+      SERVICES: '[{"name": "ug", "url": "http://gql_ug:8000/gql"}]'
     healthcheck:
       interval: 60s
       retries: 3
       start_period: 60s
       timeout: 10s
     restart: on-failure
-    network_mode: "host"
+    # network_mode: "host"
+    ports:
+      - 33000:3000
 
   gql_ug:
     image: kavic/ug:latest
@@ -24,7 +26,7 @@ services:
       # promenne, ktere lze cist v kontejneru
       - POSTGRES_USER=root
       - POSTGRES_PASSWORD=root
-      - POSTGRES_HOST=160.216.228.180:5432   # link to db out of stack
+      - POSTGRES_HOST=192.168.56.104:5432   # link to db out of stack
       # - POSTGRES_HOST=postgres:5432
       - POSTGRES_DB=data
       #- GQLUG_ENDPOINT_URL=http://gql_ug:8000/gql

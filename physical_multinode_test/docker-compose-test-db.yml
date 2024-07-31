@@ -1,12 +1,12 @@
 services:
-  pgadmin:
-    container_name: pgadmin4
-    image: "dpage/pgadmin4:7.8"
-    restart: unless-stopped
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@admin.com
-      PGADMIN_DEFAULT_PASSWORD: root
-    network_mode: "host"
+  # pgadmin:
+  #   container_name: pgadmin4
+  #   image: "dpage/pgadmin4:7.8"
+  #   restart: unless-stopped
+  #   environment:
+  #     PGADMIN_DEFAULT_EMAIL: admin@admin.com
+  #     PGADMIN_DEFAULT_PASSWORD: root
+  #   network_mode: "host"
 
   postgres:
     container_name: postgres
@@ -16,17 +16,19 @@ services:
       POSTGRES_USER: root
       POSTGRES_PASSWORD: root
       POSTGRES_DB: data
-    network_mode: "host"
+    # network_mode: "host"
+    ports:
+      - "5432:5432"
 
-  frontend:
-    image: hrbolek/frontend
-    container_name: frontend
-    environment:
-      POSTGRES_USER: root
-      POSTGRES_PASSWORD: root
-      POSTGRES_HOST: postgres
-      POSTGRES_DB: data
-      SALT: fe1c71b2-74c0-41e5-978f-eecbffac7418
-      DEMO: "False"
-      GQL_PROXY: http://apollo:3000/api/gql/
-    network_mode: "host"
+  # frontend:
+  #   image: hrbolek/frontend
+  #   container_name: frontend
+  #   environment:
+  #     POSTGRES_USER: root
+  #     POSTGRES_PASSWORD: root
+  #     POSTGRES_HOST: postgres
+  #     POSTGRES_DB: data
+  #     SALT: fe1c71b2-74c0-41e5-978f-eecbffac7418
+  #     DEMO: "False"
+  #     GQL_PROXY: http://apollo:3000/api/gql/
+  #   network_mode: "host"
